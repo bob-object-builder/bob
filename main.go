@@ -1,0 +1,153 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"salvadorsru/bob/internal/core/console"
+	"salvadorsru/bob/internal/core/drivers"
+	"salvadorsru/bob/internal/core/utils"
+	"salvadorsru/bob/internal/transpiler"
+	"sync"
+)
+
+var version string = "0.0.0"
+
+func main() {
+	console.Clear()
+
+	var queryFile string
+	var driverName string
+	var queryString string
+	var outputFile string
+	var searchMode bool
+	var queries string
+	var searchTarget string = "."
+
+	for i, arg := range os.Args {
+		if arg == "-v" || arg == "--version" {
+			fmt.Println(version)
+			os.Exit(0)
+		}
+
+		getFlagValue := func(i int, shortFlag string, longFlag string, isObligatory bool) (string, bool) {
+			arg := os.Args[i]
+			if (arg == shortFlag || (longFlag != "" && arg == longFlag)) && i+1 < len(os.Args) {
+				nextArg := os.Args[i+1]
+				if len(nextArg) > 0 && nextArg[0] == '-' {
+					if isObligatory {
+						fmt.Printf("error: expected value after %s, got flag %s\n", arg, nextArg)
+						os.Exit(1)
+					} else {
+						return "", true
+					}
+				}
+				return nextArg, true
+			}
+			return "", false
+		}
+
+		if val, ok := getFlagValue(i, "-i", "--input", true); ok {
+			queryFile = val
+		}
+
+		if val, ok := getFlagValue(i, "-d", "--driver", true); ok {
+			driverName = val
+		}
+
+		if val, ok := getFlagValue(i, "-q", "--query", true); ok {
+			queryString = val
+		}
+
+		if val, ok := getFlagValue(i, "-o", "--output", true); ok {
+			outputFile = val
+		}
+
+		if arg == "-s" || arg == "--search" {
+			searchMode = true
+			if val, hasValue := getFlagValue(i, "-s", "--search", false); hasValue {
+				if val != "" {
+					searchTarget = val
+				}
+			}
+		}
+	}
+
+	if driverName == "" {
+		fmt.Println("error: no driver specified. Use -d <driver> or --driver <driver> (mariadb, postgresql, sqlite)")
+		os.Exit(1)
+	}
+
+	if searchMode {
+		files, err := utils.FindBobFiles(searchTarget)
+		if err != nil {
+			fmt.Println("error: searching for .bob files:", err)
+			os.Exit(1)
+		}
+		if len(files) == 0 {
+			fmt.Println("error: no .bob files found in the current directory and subdirectories.")
+			os.Exit(1)
+		}
+
+		var wg sync.WaitGroup
+		type fileResult struct {
+			content string
+			err     error
+		}
+		results := make([]fileResult, len(files))
+		for i, file := range files {
+			wg.Add(1)
+			go func(idx int, filename string) {
+				defer wg.Done()
+				queryBytes, err := os.ReadFile(filename)
+				if err != nil {
+					results[idx] = fileResult{"", fmt.Errorf("error: reading %s: %v", filename, err)}
+					return
+				}
+				results[idx] = fileResult{string(queryBytes), nil}
+			}(i, file)
+		}
+		wg.Wait()
+
+		var allInput string
+		for _, res := range results {
+			if res.err != nil {
+				fmt.Println(res.err)
+				continue
+			}
+			allInput += res.content + "\n"
+		}
+
+		queries = transpiler.Transpile(drivers.Motor(driverName), allInput)
+	} else {
+		var input string
+
+		if queryString != "" {
+			input = queryString
+		} else {
+			if queryFile == "" {
+				fmt.Println("error: No input file specified. Use -i <file> or provide a query with -q <query>")
+				os.Exit(1)
+			}
+			queryBytes, err := os.ReadFile(queryFile)
+			if err != nil {
+				fmt.Printf("error: reading %s: %v\n", queryFile, err)
+				os.Exit(1)
+			}
+			input = string(queryBytes)
+		}
+
+		queries = transpiler.Transpile(drivers.Motor(driverName), input)
+	}
+
+	if outputFile != "" {
+		file, err := os.Create(outputFile)
+		if err != nil {
+			fmt.Println("error: creating file:", err)
+			os.Exit(1)
+		}
+		defer file.Close()
+		fmt.Println(queries)
+	} else {
+		fmt.Println(queries)
+	}
+}

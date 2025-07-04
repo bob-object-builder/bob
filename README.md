@@ -1,0 +1,92 @@
+# BOB
+
+**Bob** is a lightweight, declarative transpiler that allows you to define database schemas and queries using a simple, human-readable DSL (Domain Specific Language) in `.bob` files. Bob then converts these definitions into SQL code for various database engines, such as SQLite, MariaDB, and PostgreSQL.
+
+## ❓ What is Bob?
+
+Bob is designed to simplify the process of modeling databases and writing queries. Instead of writing verbose SQL, you describe your tables, relationships, and queries in a concise format. Bob parses this format and generates the corresponding SQL code automatically.
+
+## ✨ Key Features
+
+- 📝 **Declarative Syntax:** Define tables, fields, relationships, and queries in a clear and readable way.
+- 🌐 **Multi-Database Support:** Generate SQL for SQLite, MariaDB, and PostgreSQL.
+- 🔗 **Automatic Relationships:** Easily define foreign keys and joins.
+- 📊 **Aggregations and Filters:** Use simple syntax for counts, filters, and groupings.
+- 🧩 **Extensible:** The internal architecture allows for adding new drivers and custom logic.
+
+## ⚙️ How Does It Work?
+
+1. 📄 **Write a `.bob` file:**
+   Describe your database schema and queries using Bob's DSL.
+
+2. 🏃 **Run Bob:**
+   Use the command line to transpile your `.bob` file into SQL:
+
+   ```
+   go run main.go -i input.bob -d sqlite
+   ```
+
+   Replace `sqlite` with `mariadb` or `postgresql` as needed.
+
+3. 💾 **Get SQL Output:**
+   By default, the generated SQL is printed to the terminal. You can specify an output file with the `-o {fileName}` flag to save the SQL to a file.
+
+## 🧪 Example
+
+**input.bob**
+
+```
+table Users {
+    id id
+    name string
+    email string unique index
+    created_at createdAt
+}
+
+get Users {
+    id
+    name
+    email
+    if email != ""
+}
+```
+
+**output.sql** (example)
+
+```sql
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    email TEXT UNIQUE,
+    created_at DATETIME
+);
+
+SELECT id, name, email FROM users WHERE email != "";
+```
+
+## 📚 Supported Syntax
+
+- `table TableName { ... }` — Define tables and columns.
+- `get TableName { ... }` — Define queries.
+- `unique`, `index` — Column modifiers.
+- `-> RelatedTable foreign_key { ... }` — Joins.
+- `count(*)`, `group field`, `if condition` — Aggregations, grouping, and filtering.
+- 💬 Comments with `//`.
+
+See the documentation for a complete syntax reference.
+
+## 🏗️ Internal Architecture
+
+- ⚙️ **Lexer/Parser:** Reads and interprets the `.bob` file.
+- 🧠 **Models:** Represents tables, actions, and queries.
+- 🔀 **Transpiler:** Converts the parsed model into SQL for the selected database engine.
+- 🛠️ **Drivers:** Abstracts differences between SQL dialects.
+
+## 🙌 Why Use Bob?
+
+- ⏱️ Rapidly prototype and evolve your database schema.
+- ✂️ Write less boilerplate SQL.
+- 📁 Maintain database logic in a single, versionable file.
+- 🔄 Easily switch between different SQL engines.
+
+---
