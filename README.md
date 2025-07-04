@@ -32,14 +32,14 @@ Bob is designed to simplify the process of modeling databases and writing querie
 
 ## Flags
 
-| Flag                  | Description                                                                                    | Required / Optional |
-| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------- |
-| `-i` <br> `--input`   | Path to the input `.bob` file                                                                  | Optional            |
-| `-q` <br> `--query`   | Direct query string input instead of file                                                      | Optional            |
-| `-d` <br> `--driver`  | Database driver: `mariadb`, `postgresql`, or `sqlite`                                          | Required            |
-| `-o` <br> `--output`  | Output file path for saving the generated SQL (default output is terminal)                     | Optional            |
-| `-s` <br> `--search`  | Recursively search for `.bob` files in a directory (default `.`) and transpile all found files | Optional            |
-| `-v` <br> `--version` | Show Bob version and exit                                                                      | Optional            |
+| Flag                  | Description                                                                | Required / Optional |
+| --------------------- | -------------------------------------------------------------------------- | ------------------- |
+| `-i` <br> `--input`   | Path to the input `.bob` file                                              | Optional            |
+| `-q` <br> `--query`   | Direct query string input instead of file                                  | Optional            |
+| `-d` <br> `--driver`  | Database driver: `mariadb`, `postgresql`, or `sqlite`                      | Required            |
+| `-o` <br> `--output`  | Output file path for saving the generated SQL (default output is terminal) | Optional            |
+| `-s` <br> `--search`  | Recursively search for `.bob` files in a directory (default `.`)           | Optional            |
+| `-v` <br> `--version` | Show Bob version and exit                                                  | Optional            |
 
 You must include some kind of flag to provide "the query", either `-i`, `-s`, or `-q`.
 
