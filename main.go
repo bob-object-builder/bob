@@ -145,8 +145,9 @@ func main() {
 			fmt.Println("error: creating file:", err)
 			os.Exit(1)
 		}
+		fmt.Println("success: file created at", outputFile)
+
 		defer file.Close()
-		fmt.Println(queries)
 	} else {
 		fmt.Println(queries)
 	}
