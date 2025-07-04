@@ -30,11 +30,21 @@ Bob is designed to simplify the process of modeling databases and writing querie
 
    Replace `sqlite` with `mariadb` or `postgresql` as needed.
 
+## Flags
+
+| Flag              | Description                                                                                    | Required / Optional                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `-i`, `--input`   | Path to the input `.bob` file                                                                  | Required if no direct query string (`-q`) or search (`-s`) |
+| `-q`, `--query`   | Direct query string input instead of file                                                      | Optional                                                   |
+| `-d`, `--driver`  | Database driver: `mariadb`, `postgresql`, or `sqlite`                                          | Required                                                   |
+| `-o`, `--output`  | Output file path for saving the generated SQL (default output is terminal)                     | Optional                                                   |
+| `-s`, `--search`  | Recursively search for `.bob` files in a directory (default `.`) and transpile all found files | Optional                                                   |
+| `-v`, `--version` | Show Bob version and exit                                                                      | Optional                                                   |
+
 3. 💾 **Get SQL Output:**
    By default, the generated SQL is printed to the terminal. You can specify an output file with the `-o {fileName}` flag to save the SQL to a file.
 
 ## 🧪 Example
-
 
 ```
 table Users {
@@ -51,7 +61,6 @@ get Users {
     if email != ""
 }
 ```
-
 
 ```sql
 CREATE TABLE users (
