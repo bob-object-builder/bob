@@ -25,7 +25,7 @@ func main() {
 
 	for i, arg := range os.Args {
 		if arg == "-v" || arg == "--version" {
-			fmt.Println(version)
+			console.Log(version)
 			os.Exit(0)
 		}
 
@@ -73,19 +73,16 @@ func main() {
 	}
 
 	if driverName == "" {
-		fmt.Println("error: no driver specified. Use -d <driver> or --driver <driver> (mariadb, postgresql, sqlite)")
-		os.Exit(1)
+		console.Panic("error: no driver specified. Use -d <driver> or --driver <driver> (mariadb, postgresql, sqlite)")
 	}
 
 	if searchMode {
 		files, err := utils.FindBobFiles(searchTarget)
 		if err != nil {
-			fmt.Println("error: searching for .bob files:", err)
-			os.Exit(1)
+			console.Panic("error: searching for .bob files:", err)
 		}
 		if len(files) == 0 {
-			fmt.Println("error: no .bob files found in the current directory and subdirectories.")
-			os.Exit(1)
+			console.Panic("error: no .bob files found in the current directory and subdirectories.")
 		}
 
 		var wg sync.WaitGroup
@@ -111,7 +108,7 @@ func main() {
 		var allInput string
 		for _, res := range results {
 			if res.err != nil {
-				fmt.Println(res.err)
+				console.Log(res.err)
 				continue
 			}
 			allInput += res.content + "\n"
@@ -125,13 +122,11 @@ func main() {
 			input = queryString
 		} else {
 			if queryFile == "" {
-				fmt.Println("error: No input file specified. Use -i <file> or provide a query with -q <query>")
-				os.Exit(1)
+				console.Panic("error: No input file specified. Use -i <file> or provide a query with -q <query>")
 			}
 			queryBytes, err := os.ReadFile(queryFile)
 			if err != nil {
-				fmt.Printf("error: reading %s: %v\n", queryFile, err)
-				os.Exit(1)
+				console.Panic("error: reading %s: %v\n", queryFile, err)
 			}
 			input = string(queryBytes)
 		}
@@ -142,18 +137,16 @@ func main() {
 	if outputFile != "" {
 		file, err := os.Create(outputFile)
 		if err != nil {
-			fmt.Println("error: creating file:", err)
-			os.Exit(1)
+			console.Panic("error: creating file:", err)
 		}
 		_, err = file.Write([]byte(queries))
 		if err != nil {
-			fmt.Println("error: writing to file:", err)
 			file.Close()
-			os.Exit(1)
+			console.Panic("error: writing to file:", err)
 		}
-		fmt.Println("success: file created at", outputFile)
+		console.Log("success: file created at", outputFile)
 		defer file.Close()
 	} else {
-		fmt.Println(queries)
+		console.Log(queries)
 	}
 }

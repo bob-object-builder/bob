@@ -138,7 +138,13 @@ func parseTable(tableId string, block lexer.Block) utils.Object[*Table] {
 
 func makeReference(parsedTables *utils.Object[*Table], referencedTableName string, referencedTableColumn Reference) (string, *Column) {
 	referencedTable := (*parsedTables).Get(referencedTableColumn.table)
+	if referencedTable == nil {
+		console.Panic("error: referenced table not found", referencedTableColumn.table)
+	}
 	referecedColumn := referencedTable.Columns.Get(referencedTableColumn.column)
+	if referecedColumn == nil {
+		console.Panic("error: referenced column not found", referencedTableColumn.column, "in table", referencedTableColumn.table)
+	}
 	columnName := referencedTableName
 
 	return columnName, &Column{

@@ -103,8 +103,12 @@ func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) ([]string, []
 
 			ParseSelections(driver, toJoin.Query, selected, true)
 			joinQueries = append(joinQueries, toJoin.Query)
-		}
 
+			// RECURSIVAMENTE PARSEAMOS LOS JOINS INTERNOS
+			subJoins, subQueries := ParseJoins(driver, toJoin.Query, selected)
+			joins = append(joins, subJoins...)
+			joinQueries = append(joinQueries, subQueries...)
+		}
 	}
 
 	return joins, joinQueries
@@ -195,6 +199,7 @@ func (a Get) ToQuery(driver drivers.Driver) string {
 	}
 
 	joins, joinQueries := ParseJoins(driver, &a, &selected)
+
 	query = fmt.Sprintf(query, strings.Join(selected, ",\n"), a.Table)
 
 	operations := ParseOperations(append(joinQueries, &a)...)

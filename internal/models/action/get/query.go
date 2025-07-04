@@ -56,7 +56,6 @@ func NewQuery(block lexer.Block) Get {
 					Query:     &joinQuery,
 				})
 
-				continue
 			}
 
 			subQuery := NewQuery(v)
