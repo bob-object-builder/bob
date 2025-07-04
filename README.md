@@ -1,3 +1,5 @@
+![bob-banner](https://github.com/user-attachments/assets/1b786ab4-99f7-4d29-a257-e44759189938)
+
 # BOB
 
 **Bob** is a lightweight, declarative transpiler that allows you to define database schemas and queries using a simple, human-readable DSL (Domain Specific Language) in `.bob` files. Bob then converts these definitions into SQL code for various database engines, such as SQLite, MariaDB, and PostgreSQL.
@@ -33,7 +35,6 @@ Bob is designed to simplify the process of modeling databases and writing querie
 
 ## 🧪 Example
 
-**input.bob**
 
 ```
 table Users {
@@ -51,7 +52,6 @@ get Users {
 }
 ```
 
-**output.sql** (example)
 
 ```sql
 CREATE TABLE users (
