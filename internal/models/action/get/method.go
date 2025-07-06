@@ -130,9 +130,6 @@ func ParseOperations(actions ...*Get) []string {
 
 	for _, a := range actions {
 		for _, filter := range a.Filters {
-			if len(operations) == 0 {
-				addLnOp("WHERE")
-			}
 			var targetColumn string
 			var latestOperation string
 			for _, token := range filter {
@@ -143,6 +140,8 @@ func ParseOperations(actions ...*Get) []string {
 					if isFirst {
 						if isGroup {
 							addLnOp("HAVING")
+						} else {
+							addLnOp("WHERE")
 						}
 						isFirst = false
 					} else {
