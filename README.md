@@ -2,7 +2,7 @@
 
 # BOB
 
-**Bob** is a lightweight, declarative transpiler that allows you to define database schemas and queries using a simple, human-readable DSL (Domain Specific Language) in `.bob` files. Bob then converts these definitions into SQL code for various database engines, such as SQLite, MariaDB, and PostgreSQL.
+**Bob** is a lightweight, declarative transpiler that allows you to define database schemas and queries using a simple, human-readable DSL (Domain Specific Language) called `bob`. Bob then converts these definitions into SQL code for various database engines, such as SQLite, MariaDB, and PostgreSQL.
 
 ## ❓ What is Bob?
 
