@@ -18,5 +18,5 @@ func GetType(toGet string) string {
 		return "INTEGER"
 	}
 
-	return string(toGet)
+	return ""
 }

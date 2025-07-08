@@ -53,6 +53,6 @@ func GetType(toGet string) string {
 	case drivers.Time:
 		return "TIME"
 	default:
-		return string(toGet)
+		return ""
 	}
 }

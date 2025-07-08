@@ -58,6 +58,6 @@ func GetType(toGet string) string {
 		return "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
 
 	default:
-		return string(toGet)
+		return ""
 	}
 }
