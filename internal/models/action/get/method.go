@@ -44,6 +44,7 @@ func isValue(input string) bool {
 func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin bool) {
 	for _, selectedName := range a.Selected.Keys() {
 		value := a.Selected.Get(selectedName)
+
 		switch v := value.(type) {
 		case lexer.Instruction:
 			if len(v) == 1 && !drivers.HasFunction(v[0]) {
@@ -53,9 +54,7 @@ func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin b
 				computedSelected = drivers.ReplaceFunction(computedSelected, driver.GetFunction)
 				if computedSelected == "" {
 
-					if drivers.HasFunction(selectedName) {
-						selectedName = fmt.Sprintf("%s", selectedName)
-					} else {
+					if !drivers.HasFunction(selectedName) {
 						if isJoin {
 							tableName := a.Table
 							if len(tableName) > 2 && strings.HasSuffix(tableName, "ies") {
@@ -104,10 +103,9 @@ func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) ([]string, []
 			ParseSelections(driver, toJoin.Query, selected, true)
 			joinQueries = append(joinQueries, toJoin.Query)
 
-			// RECURSIVAMENTE PARSEAMOS LOS JOINS INTERNOS
-			subJoins, subQueries := ParseJoins(driver, toJoin.Query, selected)
+			subJoins, subJoinQueries := ParseJoins(driver, toJoin.Query, selected)
 			joins = append(joins, subJoins...)
-			joinQueries = append(joinQueries, subQueries...)
+			joinQueries = append(joinQueries, subJoinQueries...)
 		}
 	}
 
