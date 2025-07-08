@@ -2,6 +2,7 @@ package table
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/core/console"
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/core/utils"
 	"strings"
@@ -22,6 +23,10 @@ func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePr
 	column := t.Columns.Get(columnName)
 
 	columnType := driver.GetType(column.Type)
+
+	if columnType == "" {
+		console.Panic("error: undefined type '" + column.Type + "'")
+	}
 
 	columnSentence := fmt.Sprintf("%s %s", columnName, columnType)
 
