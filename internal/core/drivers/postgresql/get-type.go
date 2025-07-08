@@ -56,6 +56,8 @@ func GetType(toGet string) string {
 		return "SERIAL"
 	case drivers.CreatedAt:
 		return "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+	case drivers.Boolean:
+		return "BOOLEAN"
 
 	default:
 		return ""

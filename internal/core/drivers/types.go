@@ -39,4 +39,5 @@ const (
 	Time      Type = "time"
 	Id        Type = "id"
 	CreatedAt Type = "createdAt"
+	Boolean   Type = "boolean"
 )

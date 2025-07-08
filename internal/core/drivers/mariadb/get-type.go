@@ -52,6 +52,8 @@ func GetType(toGet string) string {
 		return "DATE"
 	case drivers.Time:
 		return "TIME"
+	case drivers.Boolean:
+		return "BOOLEAN"
 	default:
 		return ""
 	}

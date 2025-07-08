@@ -16,6 +16,8 @@ func GetType(toGet string) string {
 		return "BLOB"
 	case drivers.Time:
 		return "INTEGER"
+	case drivers.Boolean:
+		return "BOOLEAN"
 	}
 
 	return ""
