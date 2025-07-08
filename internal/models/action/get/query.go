@@ -56,10 +56,10 @@ func NewQuery(block lexer.Block) Get {
 					Query:     &joinQuery,
 				})
 
+			} else {
+				subQuery := NewQuery(v)
+				get.Selected.Set(subQuery.Alias, subQuery)
 			}
-
-			subQuery := NewQuery(v)
-			get.Selected.Set(subQuery.Alias, subQuery)
 		}
 	}
 
