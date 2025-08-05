@@ -6,6 +6,7 @@ import (
 	"salvadorsru/bob/internal/core/utils"
 	"salvadorsru/bob/internal/models/action/get"
 	"salvadorsru/bob/internal/models/action/insert"
+	"salvadorsru/bob/internal/models/action/set"
 	"salvadorsru/bob/internal/models/table"
 	"strings"
 )
@@ -20,6 +21,9 @@ func Transpile(driver drivers.Driver, tables *utils.Object[*table.Table], blocks
 			query := v.ToQuery(driver)
 			queries = append(queries, query)
 		case insert.New:
+			query := v.ToQuery(driver)
+			queries = append(queries, query)
+		case set.Set:
 			query := v.ToQuery(driver)
 			queries = append(queries, query)
 		}

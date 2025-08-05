@@ -1,4 +1,4 @@
-package get
+package set
 
 import (
 	"fmt"
@@ -8,41 +8,21 @@ import (
 	"strings"
 )
 
-func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin bool) {
-	for _, selectedName := range a.Selected.Keys() {
-		value := a.Selected.Get(selectedName)
+func ParseSelections(driver drivers.Driver, a *Set, selected *[]string, isJoin bool) {
+	for _, selectedName := range a.Values.Keys() {
+		value := a.Values.Get(selectedName)
 
 		switch v := value.(type) {
 		case lexer.Instruction:
 			if len(v) == 1 && !drivers.HasFunction(v[0]) {
-				selectedName = fmt.Sprintf("%s.%s as %s", v[0], a.Table, selectedName)
+				selectedName = fmt.Sprintf("%s = %s", selectedName, v[0])
 			} else {
-				computedSelected := strings.Join(v, " ")
-				computedSelected = drivers.ReplaceFunction(computedSelected, driver.GetFunction)
-				if computedSelected == "" {
-
-					if !drivers.HasFunction(selectedName) {
-						if isJoin {
-							tableName := a.Table
-							if len(tableName) > 2 && strings.HasSuffix(tableName, "ies") {
-								tableName = tableName[:len(tableName)-3] + "y"
-							} else if len(tableName) > 0 && tableName[len(tableName)-1] == 's' {
-								tableName = tableName[:len(tableName)-1]
-							}
-							selectedName = fmt.Sprintf("%s.%s as %s_%s", a.Table, selectedName, tableName, selectedName)
-						} else {
-							selectedName = fmt.Sprintf("%s.%s as %s", a.Table, selectedName, selectedName)
-						}
-					}
-
-				} else {
-					selectedName = fmt.Sprintf("%s as %s_%s", computedSelected, a.Table, selectedName)
-				}
+				continue
 			}
 
 			selectedName = utils.Indent(selectedName)
 			*selected = append(*selected, selectedName)
-		case Get:
+		case Set:
 			query := utils.IndentLines(v.ToQuery(driver))
 			selectedName = fmt.Sprintf("(\n%s\n) as %s", query, selectedName)
 			selectedName = utils.IndentLines(selectedName)
@@ -52,9 +32,9 @@ func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin b
 	}
 }
 
-func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) ([]string, []*Get) {
+func ParseJoins(driver drivers.Driver, a *Set, selected *[]string) ([]string, []*Set) {
 	joins := []string{}
-	joinQueries := []*Get{}
+	joinQueries := []*Set{}
 
 	for _, toJoinName := range a.Join.Keys() {
 		toJoin := a.Join.Get(toJoinName)
@@ -79,7 +59,7 @@ func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) ([]string, []
 	return joins, joinQueries
 }
 
-func ParseOperations(actions ...*Get) []string {
+func ParseOperations(actions ...*Set) []string {
 	operations := []string{}
 	isGroup := false
 	isFirstOperationInsideGroup := false
@@ -173,103 +153,43 @@ func ParseOperations(actions ...*Get) []string {
 	return operations
 }
 
-// func ParseOperations(actions ...*Get) []string {
-// 	operations := []string{}
+func (a Set) ToQuery(driver drivers.Driver) string {
+	var query string
 
-// 	addOp := func(newOp ...string) {
-// 		operations = append(operations, strings.Join(newOp, " "))
-// 	}
-
-// 	addLnOp := func(newOp ...string) {
-// 		operations = append(operations, "\n"+strings.Join(newOp, " "))
-// 	}
-
-// 	isFirst := true
-// 	isGroup := false
-
-// 	for _, a := range actions {
-// 		for _, filter := range a.Filters {
-// 			var targetColumn string
-// 			var latestOperation string
-// 			for _, token := range filter {
-// 				op := drivers.Operator(token)
-
-// 				switch op {
-// 				case drivers.If:
-// 					if isFirst {
-// 						if isGroup {
-// 							addLnOp("HAVING")
-// 						} else {
-// 							addLnOp("WHERE")
-// 						}
-// 						isFirst = false
-// 					} else {
-// 						addLnOp("AND")
-// 					}
-// 					if len(filter) > 1 {
-// 						targetColumn = filter[1]
-// 					}
-// 					continue
-// 				case drivers.Or:
-// 					addLnOp("OR")
-// 					if len(filter) > 1 {
-// 						targetColumn = filter[1]
-// 					}
-// 				case drivers.Group:
-// 					addLnOp("GROUP BY")
-// 					isFirst = true
-// 					isGroup = true
-// 					continue
-// 				case drivers.And:
-// 					addLnOp("AND", fmt.Sprintf("%s.%s", a.Table, targetColumn), latestOperation)
-// 				case drivers.Else:
-// 					addLnOp("OR", fmt.Sprintf("%s.%s", a.Table, targetColumn), latestOperation)
-// 				default:
-// 					if utils.IsValue(token) {
-// 						addOp(token)
-// 					} else if drivers.IsOperator(token) {
-// 						addOp(token)
-// 						latestOperation = token
-// 					} else {
-// 						if utils.StartsWithUpper(token) {
-// 							addOp(utils.PascalToSnakeCase(token))
-// 						} else {
-// 							addOp(fmt.Sprintf("%s.%s", a.Table, token))
-// 						}
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return operations
-// }
-
-func (a Get) ToQuery(driver drivers.Driver) string {
-	query := "SELECT\n%s \nFROM %s"
+	if driver.Motor == drivers.PostgreSQL {
+		query = "UPDATE\n%s\nSET\n%s %s %s"
+	} else {
+		query = "UPDATE\n%s %s \nSET \n%s %s"
+	}
 
 	selected := []string{}
 
 	ParseSelections(driver, &a, &selected, false)
 
 	if len(selected) < 1 {
-		selected = append(selected, "*")
+		selected = append(selected, utils.Indent("*"))
 	}
 
 	joins, joinQueries := ParseJoins(driver, &a, &selected)
 
-	query = fmt.Sprintf(query, strings.Join(selected, ",\n"), a.Table)
-
 	operations := ParseOperations(append(joinQueries, &a)...)
 
-	if len(joins) > 0 {
-		joinsSentence := strings.Join(joins, "\n")
-		query += "\n" + joinsSentence
+	var joinsSentence string = ""
+	if driver.Motor != drivers.SQLite {
+		if len(joins) > 0 {
+			joinsSentence = "\n" + strings.Join(joins, "\n")
+		}
 	}
 
+	var operationSentence string
 	if len(operations) > 0 {
-		operationSentence := strings.Join(operations, " ")
-		query += " " + operationSentence
+		operationSentence = strings.Join(operations, " ")
+	}
+
+	if driver.Motor == drivers.MariaDB || driver.Motor == drivers.SQLite {
+		query = fmt.Sprintf(query, utils.Indent(a.Table), joinsSentence, strings.Join(selected, ",\n"), operationSentence)
+	} else {
+		query = fmt.Sprintf(query, utils.Indent(a.Table), strings.Join(selected, ",\n"), joinsSentence, operationSentence)
 	}
 
 	return query

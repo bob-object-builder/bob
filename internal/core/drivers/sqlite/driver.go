@@ -5,6 +5,7 @@ import (
 )
 
 var Driver = drivers.Driver{
+	Motor:        drivers.SQLite,
 	GetType:      GetType,
 	GetAttribute: GetAttribute,
 	GetFunction:  GetFunction,

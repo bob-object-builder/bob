@@ -5,6 +5,7 @@ import (
 )
 
 var Driver = drivers.Driver{
+	Motor:        drivers.MariaDB,
 	GetType:      GetType,
 	GetAttribute: GetAttribute,
 	GetFunction:  GetFunction,

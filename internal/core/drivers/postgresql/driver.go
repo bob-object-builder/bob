@@ -5,6 +5,7 @@ import (
 )
 
 var Driver = drivers.Driver{
+	Motor:        drivers.PostgreSQL,
 	GetType:      GetType,
 	GetAttribute: GetAttribute,
 	GetFunction:  GetFunction,

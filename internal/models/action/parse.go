@@ -4,6 +4,7 @@ import (
 	"salvadorsru/bob/internal/core/lexer"
 	"salvadorsru/bob/internal/models/action/get"
 	"salvadorsru/bob/internal/models/action/insert"
+	"salvadorsru/bob/internal/models/action/set"
 )
 
 func Parse(actions lexer.Blocks) []any {
@@ -17,8 +18,10 @@ func Parse(actions lexer.Blocks) []any {
 		case lexer.New:
 			query := insert.NewQuery(action)
 			queries = append(queries, query)
+		case lexer.Set:
+			query := set.NewQuery(action)
+			queries = append(queries, query)
 		}
-
 	}
 
 	return queries

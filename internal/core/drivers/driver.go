@@ -9,6 +9,7 @@ const (
 )
 
 type Driver struct {
+	Motor        Motor
 	GetType      func(tryType string) string
 	GetAttribute func(tryAttribute string) string
 	GetFunction  func(tryFunction string) string
