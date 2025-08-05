@@ -7,7 +7,7 @@ func GetType(toGet string) string {
 	case drivers.Int:
 		return "INTEGER"
 	case drivers.Int8:
-		return "SMALLINT" // no tiene tinyint, usamos SMALLINT
+		return "SMALLINT"
 	case drivers.Int16:
 		return "SMALLINT"
 	case drivers.Int32:
@@ -16,7 +16,7 @@ func GetType(toGet string) string {
 		return "BIGINT"
 
 	case drivers.Uint:
-		return "INTEGER" // no unsigned en PG, hay que controlar en app
+		return "INTEGER"
 	case drivers.Uint8:
 		return "SMALLINT"
 	case drivers.Uint16:
@@ -24,7 +24,7 @@ func GetType(toGet string) string {
 	case drivers.Uint32:
 		return "BIGINT"
 	case drivers.Uint64:
-		return "NUMERIC" // para uint64 sin signo, usar NUMERIC
+		return "NUMERIC"
 
 	case drivers.Float32:
 		return "REAL"
@@ -52,7 +52,6 @@ func GetType(toGet string) string {
 		return "TIME"
 
 	case drivers.Id:
-		// Serial for auto increment (in tables use SERIAL or IDENTITY)
 		return "SERIAL"
 	case drivers.CreatedAt:
 		return "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
