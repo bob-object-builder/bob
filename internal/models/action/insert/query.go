@@ -23,37 +23,36 @@ func NewQuery(block lexer.Block) New {
 			new.Fields = append(new.Fields, columnName)
 		}
 
-		inString := false
 		for _, child := range block.Children() {
 			values := []string{}
 
 			if v, ok := child.(lexer.Instruction); ok {
 				columnString := []string{}
 
-				for _, slice := range v {
-					if inString {
-						columnString = append(columnString, slice)
+				for i, slice := range v {
 
-						isEscaped := slice[len(slice)-1] == '\\'
-						if !isEscaped && strings.HasSuffix(slice, `"`) {
-							inString = false
-							values = append(values, strings.Join(columnString, " "))
-						}
-
-					} else {
-						inString = strings.HasPrefix(slice, `"`)
-
-						if inString {
-							columnString = append(columnString, slice)
-
-							if strings.HasSuffix(slice, `"`) {
-								inString = false
-								values = append(values, strings.Join(columnString, " "))
-							}
-						} else {
-							values = append(values, slice)
-						}
+					if i > len(block.Actions()[1:]) {
+						break
 					}
+
+					if utils.IsStringStart(slice) {
+						if utils.IsStringEnd(slice) {
+							columnString = []string{}
+							columnString = append(columnString, slice)
+							values = append(values, strings.Join(columnString, " "))
+						} else {
+							columnString = append(columnString, slice)
+						}
+						continue
+					}
+
+					if utils.IsStringEnd(slice) {
+						columnString = append(columnString, slice)
+						values = append(values, strings.Join(columnString, " "))
+						continue
+					}
+
+					values = append(values, slice)
 
 				}
 			}
