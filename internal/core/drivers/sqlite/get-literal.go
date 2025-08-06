@@ -4,20 +4,15 @@ import "salvadorsru/bob/internal/core/drivers"
 
 func GetLiteral(toGet string) string {
 	switch drivers.Literal(toGet) {
-	case drivers.Now:
-		return "datetime('now')"
+	case drivers.Now, drivers.UtcTimestamp, drivers.SysDate:
+		return "CURRENT_TIMESTAMP"
 	case drivers.CurrentDate:
-		return "date('now')"
+		return "CURRENT_DATE"
 	case drivers.CurrentTime:
-		return "time('now')"
-	case drivers.LocalTime:
-		return "time('now', 'localtime')"
-	case drivers.LocalTimestamp:
-		return "datetime('now', 'localtime')"
-	case drivers.UtcTimestamp:
-		return "datetime('now')"
-	case drivers.SysDate:
-		return "datetime('now')"
+		return "CURRENT_TIME"
+	case drivers.LocalTime, drivers.LocalTimestamp:
+		// SQLite doesn't support localtime in DEFAULT, return empty
+		return ""
 	default:
 		return ""
 	}
