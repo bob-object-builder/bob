@@ -45,9 +45,9 @@ func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePr
 
 		literal := driver.GetLiteral(*column.Default)
 		if literal != "" {
-			columnSentence += fmt.Sprintf(" DEFAULT %v", literal)
+			columnSentence += fmt.Sprintf(" DEFAULT %v", utils.FormatQuote(literal))
 		} else {
-			columnSentence += fmt.Sprintf(" DEFAULT %v", *column.Default)
+			columnSentence += fmt.Sprintf(" DEFAULT %v", utils.FormatQuote(*column.Default))
 		}
 	}
 

@@ -88,7 +88,7 @@ func ParseOperations(actions ...*Get) []string {
 		for i, filter := range a.Filters {
 			sentence := []string{}
 			operator := filter[0]
-			subject := filter[1]
+			subject := a.Table + "." + filter[1]
 
 			if operator == string(drivers.Group) {
 				sentence = append(sentence, "\nGROUP BY", subject)
@@ -122,7 +122,7 @@ func ParseOperations(actions ...*Get) []string {
 						stringAcc += " " + token
 
 						if utils.IsStringEnd(token) {
-							sentence = append(sentence, stringAcc)
+							sentence = append(sentence, utils.FormatQuote(stringAcc))
 							onString = false
 						}
 
@@ -134,7 +134,7 @@ func ParseOperations(actions ...*Get) []string {
 						onString = true
 
 						if utils.IsStringEnd(token) {
-							sentence = append(sentence, stringAcc)
+							sentence = append(sentence, utils.FormatQuote(stringAcc))
 							onString = false
 						}
 
