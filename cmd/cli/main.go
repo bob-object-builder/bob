@@ -73,16 +73,16 @@ func main() {
 	}
 
 	if driverName == "" {
-		console.Panic("error: no driver specified. Use -d <driver> or --driver <driver> (mariadb, postgresql, sqlite)")
+		console.Panic("no driver specified. Use -d <driver> or --driver <driver> (mariadb, postgresql, sqlite)")
 	}
 
 	if searchMode {
 		files, err := utils.FindBobFiles(searchTarget)
 		if err != nil {
-			console.Panic("error: searching for .bob files:", err)
+			console.Panic("searching for .bob files:", err)
 		}
 		if len(files) == 0 {
-			console.Panic("error: no .bob files found in the current directory and subdirectories.")
+			console.Panic("no .bob files found in the current directory and subdirectories.")
 		}
 
 		var wg sync.WaitGroup
@@ -122,11 +122,11 @@ func main() {
 			input = queryString
 		} else {
 			if queryFile == "" {
-				console.Panic("error: No input file specified. Use -i <file> or provide a query with -q <query>")
+				console.Panic("no input file specified. Use -i <file> or provide a query with -q <query>")
 			}
 			queryBytes, err := os.ReadFile(queryFile)
 			if err != nil {
-				console.Panic("error: reading %s: %v\n", queryFile, err)
+				console.Panic("reading %s: %v\n", queryFile, err)
 			}
 			input = string(queryBytes)
 		}
@@ -137,14 +137,14 @@ func main() {
 	if outputFile != "" {
 		file, err := os.Create(outputFile)
 		if err != nil {
-			console.Panic("error: creating file:", err)
+			console.Panic("creating file:", err)
 		}
 		_, err = file.Write([]byte(queries))
 		if err != nil {
 			file.Close()
-			console.Panic("error: writing to file:", err)
+			console.Panic("writing to file:", err)
 		}
-		console.Log("success: file created at", outputFile)
+		console.Success("file created at", outputFile)
 		defer file.Close()
 	} else {
 		console.Log(queries)
