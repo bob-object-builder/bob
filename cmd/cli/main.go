@@ -5,6 +5,8 @@ import (
 	"os"
 	"salvadorsru/bob/internal/core/console"
 	"salvadorsru/bob/internal/core/drivers"
+	"salvadorsru/bob/internal/core/file"
+	"salvadorsru/bob/internal/core/response"
 	"salvadorsru/bob/internal/core/utils"
 	"salvadorsru/bob/internal/transpiler"
 	"sync"
@@ -23,6 +25,10 @@ func main() {
 	var queries string
 	var searchTarget string = "."
 
+	var tables string
+	var actions string
+	var transpilerError error
+
 	for i, arg := range os.Args {
 		if arg == "-v" || arg == "--version" {
 			console.Log(version)
@@ -35,7 +41,7 @@ func main() {
 				nextArg := os.Args[i+1]
 				if len(nextArg) > 0 && nextArg[0] == '-' {
 					if isObligatory {
-						fmt.Printf("error: expected value after %s, got flag %s\n", arg, nextArg)
+						console.Panic("expected value after %s, got flag %s\n", arg, nextArg)
 						os.Exit(1)
 					} else {
 						return "", true
@@ -78,43 +84,43 @@ func main() {
 
 	if searchMode {
 		files, err := utils.FindBobFiles(searchTarget)
+
 		if err != nil {
 			console.Panic("searching for .bob files:", err)
 		}
+
 		if len(files) == 0 {
 			console.Panic("no .bob files found in the current directory and subdirectories.")
 		}
 
 		var wg sync.WaitGroup
-		type fileResult struct {
-			content string
-			err     error
-		}
-		results := make([]fileResult, len(files))
-		for i, file := range files {
+
+		results := make([]file.File, len(files))
+
+		for i, fileContent := range files {
 			wg.Add(1)
 			go func(idx int, filename string) {
 				defer wg.Done()
 				queryBytes, err := os.ReadFile(filename)
 				if err != nil {
-					results[idx] = fileResult{"", fmt.Errorf("error: reading %s: %v", filename, err)}
+					results[idx] = file.File{Content: "", Err: response.Error("reading %s", filename), Ref: filename}
 					return
 				}
-				results[idx] = fileResult{string(queryBytes), nil}
-			}(i, file)
+				results[idx] = file.File{Content: string(queryBytes), Err: nil, Ref: filename}
+			}(i, fileContent)
 		}
 		wg.Wait()
 
 		var allInput string
 		for _, res := range results {
-			if res.err != nil {
-				console.Log(res.err)
+			if res.Err != nil {
+				console.Log(res.Err)
 				continue
 			}
-			allInput += res.content + "\n"
+			allInput += res.Content + "\n"
 		}
 
-		queries = transpiler.Transpile(drivers.Motor(driverName), allInput)
+		transpilerError, tables, actions = transpiler.Transpile(drivers.Motor(driverName), allInput)
 	} else {
 		var input string
 
@@ -126,23 +132,28 @@ func main() {
 			}
 			queryBytes, err := os.ReadFile(queryFile)
 			if err != nil {
-				console.Panic("reading %s: %v\n", queryFile, err)
+				console.Panic("not found", queryFile)
 			}
 			input = string(queryBytes)
 		}
 
-		queries = transpiler.Transpile(drivers.Motor(driverName), input)
+		transpilerError, tables, actions = transpiler.Transpile(drivers.Motor(driverName), input)
 	}
 
+	if transpilerError != nil {
+		console.Panic(transpilerError.Error())
+	}
+
+	queries = fmt.Sprintf("%s\n\n%s\n", tables, actions)
 	if outputFile != "" {
 		file, err := os.Create(outputFile)
 		if err != nil {
-			console.Panic("creating file:", err)
+			console.Panic("creating file", err)
 		}
 		_, err = file.Write([]byte(queries))
 		if err != nil {
 			file.Close()
-			console.Panic("writing to file:", err)
+			console.Panic("writing to file", err)
 		}
 		console.Success("file created at", outputFile)
 		defer file.Close()
