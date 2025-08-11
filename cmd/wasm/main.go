@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/transpiler"
 	"syscall/js"
@@ -15,7 +16,7 @@ func join_template_literal(args []js.Value) string {
 
 	stringsArr := args[0]
 	if stringsArr.Type() != js.TypeObject || !stringsArr.InstanceOf(js.Global().Get("Array")) {
-		// No es un array, asumimos string plano
+		// Not an array, assuming plain string
 		return args[0].String()
 	}
 
@@ -37,8 +38,20 @@ func bob(this js.Value, args []js.Value) any {
 
 	fn := js.FuncOf(func(this js.Value, args []js.Value) any {
 		query := join_template_literal(args)
-		result := transpiler.Transpile(drivers.Motor(driver), query)
-		return js.ValueOf(result)
+
+		transpileError, tables, actions := transpiler.Transpile(drivers.Motor(driver), query)
+		if transpileError != nil {
+			return js.ValueOf(map[string]any{
+				"error": transpileError.Error(),
+				"value": nil,
+			})
+		}
+
+		result := fmt.Sprintf("%s\n\n%s\n", tables, actions)
+		return js.ValueOf(map[string]any{
+			"error": nil,
+			"value": result,
+		})
 	})
 
 	return fn
