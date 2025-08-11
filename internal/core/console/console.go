@@ -5,17 +5,22 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"salvadorsru/bob/internal/core/response"
 	"strings"
 )
 
 func Log(v ...any) {
-	toPrint := strings.Repeat("%s ", len(v))
+	toPrint := strings.TrimSpace(strings.Repeat("%s ", len(v)))
 	fmt.Printf(toPrint+"\n", v...)
 }
 
+func Success(v ...any) {
+	Log("success: " + response.Success(v...))
+}
+
 func Panic(v ...any) {
-	toPrint := strings.Repeat("%s ", len(v))
-	fmt.Printf("\033[31m"+toPrint+"\033[0m\n", v...)
+	toPrint := strings.TrimSpace(strings.Repeat("%s ", len(v)))
+	fmt.Printf("\033[31m"+"error: "+toPrint+"\033[0m\n", v...)
 	os.Exit(1)
 }
 

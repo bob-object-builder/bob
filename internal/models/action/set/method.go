@@ -14,10 +14,12 @@ func ParseSelections(driver drivers.Driver, a *Set, selected *[]string, isJoin b
 
 		switch v := value.(type) {
 		case lexer.Instruction:
-			if len(v) == 1 && !drivers.HasFunction(v[0]) {
-				selectedName = fmt.Sprintf("%s = %s", selectedName, v[0])
-			} else {
+			if len(v) == 0 {
 				continue
+			}
+
+			if !drivers.HasFunction(v[0]) {
+				selectedName = fmt.Sprintf("%s = %s", selectedName, utils.FormatQuote(strings.Join(v, " ")))
 			}
 
 			selectedName = utils.Indent(selectedName)
@@ -102,7 +104,7 @@ func ParseOperations(actions ...*Set) []string {
 						stringAcc += " " + token
 
 						if utils.IsStringEnd(token) {
-							sentence = append(sentence, stringAcc)
+							sentence = append(sentence, utils.FormatQuote(stringAcc))
 							onString = false
 						}
 
@@ -114,7 +116,7 @@ func ParseOperations(actions ...*Set) []string {
 						onString = true
 
 						if utils.IsStringEnd(token) {
-							sentence = append(sentence, stringAcc)
+							sentence = append(sentence, utils.FormatQuote(stringAcc))
 							onString = false
 						}
 

@@ -42,7 +42,7 @@ line:
 				continue
 			}
 
-			if token == "}" {
+			if strings.HasPrefix(token, "}") {
 				blockDepth--
 
 				if blockDepth == 0 {

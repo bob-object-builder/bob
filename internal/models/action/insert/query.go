@@ -75,16 +75,15 @@ func NewQuery(block lexer.Block) New {
 				columnValue := v[1:]
 				columnName = strings.TrimSuffix(columnName, ":")
 
-				console.Log("columnName", columnName)
-
 				if fieldSet.Has(columnName) {
-					values[fieldSet.Get(columnName)] = strings.Join(columnValue, " ")
+					console.Log(columnName, columnName)
+					values[fieldSet.Get(columnName)] = utils.FormatQuote(strings.Join(columnValue, " "))
 					continue
 				}
 
 				fieldSet.Set(columnName, position)
 				new.Fields = append(new.Fields, columnName)
-				values = append(values, strings.Join(columnValue, " "))
+				values = append(values, utils.FormatQuote(strings.Join(columnValue, " ")))
 			}
 		}
 

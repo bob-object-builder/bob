@@ -2,7 +2,6 @@ package drivers
 
 import (
 	"fmt"
-	"salvadorsru/bob/internal/core/console"
 	"strings"
 )
 
@@ -19,7 +18,6 @@ const (
 
 func ReplaceFunction(s string, replacer func(toReplace string) string) string {
 	if replacer == nil {
-		console.Panic("ReplaceFunction: replacer function is nil")
 		return s
 	}
 	functions := []Function{AVG, SUM, MIN, MAX, COUNT, CONCAT}

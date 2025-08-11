@@ -15,7 +15,9 @@ func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin b
 		switch v := value.(type) {
 		case lexer.Instruction:
 			if len(v) == 1 && !drivers.HasFunction(v[0]) {
-				selectedName = fmt.Sprintf("%s.%s as %s", v[0], a.Table, selectedName)
+				selectedName = fmt.Sprintf("%s.%s as %s", a.Table, v[0], selectedName)
+			} else if selectedName == "*" || selectedName == "..." {
+				selectedName = a.Table + ".*"
 			} else {
 				computedSelected := strings.Join(v, " ")
 				computedSelected = drivers.ReplaceFunction(computedSelected, driver.GetFunction)
@@ -84,8 +86,17 @@ func ParseOperations(actions ...*Get) []string {
 	isGroup := false
 	isFirstOperationInsideGroup := false
 
+	if len(actions) == 0 {
+		return operations
+	}
+
 	for _, a := range actions {
 		for i, filter := range a.Filters {
+			if len(filter) < 2 {
+				// optionally log or skip
+				continue
+			}
+
 			sentence := []string{}
 			operator := filter[0]
 			subject := a.Table + "." + filter[1]
@@ -167,7 +178,6 @@ func ParseOperations(actions ...*Get) []string {
 
 			operations = append(operations, strings.Join(sentence, " "))
 		}
-
 	}
 
 	return operations

@@ -2,27 +2,27 @@ package table
 
 import (
 	"salvadorsru/bob/internal/core/config"
-	"salvadorsru/bob/internal/core/console"
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/core/lexer"
+	"salvadorsru/bob/internal/core/response"
 	"salvadorsru/bob/internal/core/utils"
 	"strings"
 )
 
-func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColumn bool) {
+func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColumn bool) error {
 	columnName := v[0]
 	isReference := utils.StartsWithUpper(columnName)
 
-	if len(v) < 2 {
-		console.Panic("undefined: attribute at column", columnName, "type as table", table.Id)
-	}
-
-	columnType := v[1]
-
+	var columnType string
 	var columnAttributes lexer.Instruction
 
 	if len(v) > 1 {
+		columnType = v[1]
 		columnAttributes = v[2:]
+	} else if isReference {
+		if columnType == "" {
+			columnType = "id"
+		}
 	}
 
 	isAction := strings.HasPrefix(columnName, config.Use().ActionAlias)
@@ -33,16 +33,17 @@ func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColu
 		case drivers.Primary:
 			table.PrimaryKeys = append(table.PrimaryKeys, v[1:]...)
 		}
-		return
+		return nil
 	}
 
+	isOptional := columnAttributes.Has(string(drivers.Optional))
 	if isReference {
 		referenceColumnName := utils.PascalToSnakeCase(columnName + "_" + columnType)
-		table.References.Set(referenceColumnName, Reference{columnName, columnType, false})
+		table.References.Set(referenceColumnName, Reference{columnName, columnType, false, isOptional})
 		columnName = referenceColumnName
 	}
 
-	if drivers.Type(columnType) == drivers.Id || drivers.Type(columnType) == drivers.CreatedAt {
+	if drivers.Type(columnType) == drivers.Id || drivers.Type(columnType) == drivers.Current {
 		tagType, tagAttributes := drivers.UseTag(columnType)
 		columnType = tagType
 		if !isReference {
@@ -67,6 +68,8 @@ func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColu
 		case drivers.Primary:
 			isPrimaryKey = true
 			table.PrimaryKeys = append(table.PrimaryKeys, columnName)
+		case drivers.Optional:
+			isOptional = true
 		case drivers.Default:
 			if len(columnAttributes) > i+1 {
 				firstValue := columnAttributes[i+1]
@@ -96,14 +99,16 @@ func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColu
 		}
 	}
 
-	column := Column{Type: columnType, Attributes: columnAttributes, IsPrimaryKey: isPrimaryKey, IsAutoIncrement: isAutoIncrement, Default: defaultValue}
+	column := Column{Type: columnType, Attributes: columnAttributes, IsPrimaryKey: isPrimaryKey, IsAutoIncrement: isAutoIncrement, IsOptional: isOptional, Default: defaultValue}
 
 	if forcedColumn {
 		table.Columns.Prepend(columnName, &column)
-		return
+		return nil
 	}
 
 	table.Columns.Set(columnName, &column)
+
+	return nil
 }
 
 func parseTable(tableId string, block lexer.Block) utils.Object[*Table] {
@@ -136,24 +141,24 @@ func parseTable(tableId string, block lexer.Block) utils.Object[*Table] {
 	return tables.Reverse()
 }
 
-func makeReference(parsedTables *utils.Object[*Table], referencedTableName string, referencedTableColumn Reference) (string, *Column) {
+func makeReference(parsedTables *utils.Object[*Table], referencedTableName string, referencedTableColumn Reference) (error, string, *Column) {
 	referencedTable := (*parsedTables).Get(referencedTableColumn.table)
 	if referencedTable == nil {
-		console.Panic("error: referenced table not found", referencedTableColumn.table)
+		return response.Error("referenced table not found", referencedTableColumn.table), "", nil
 	}
 	referecedColumn := referencedTable.Columns.Get(referencedTableColumn.column)
 	if referecedColumn == nil {
-		console.Panic("error: referenced column not found", referencedTableColumn.column, "in table", referencedTableColumn.table)
+		return response.Error("referenced column not found", referencedTableColumn.column, "in table", referencedTableColumn.table), "", nil
 	}
 	columnName := referencedTableName
 
-	return columnName, &Column{
+	return nil, columnName, &Column{
 		Type:       referecedColumn.Type,
 		Attributes: referecedColumn.Attributes,
 	}
 }
 
-func Parse(tables lexer.Tables) utils.Object[*Table] {
+func Parse(tables lexer.Tables) (error, *utils.Object[*Table]) {
 	parsedTables := utils.Object[*Table]{}
 
 	for _, tableName := range tables.Order {
@@ -167,10 +172,16 @@ func Parse(tables lexer.Tables) utils.Object[*Table] {
 
 		for _, referencedTableName := range parsedTable.References.Order {
 			referencedTableColumn := parsedTable.References.Get(referencedTableName)
-			columnName, newColumn := makeReference(&parsedTables, referencedTableName, referencedTableColumn)
+			columnsError, columnName, newColumn := makeReference(&parsedTables, referencedTableName, referencedTableColumn)
+			if columnsError != nil {
+				return columnsError, nil
+			}
+
+			newColumn.IsOptional = referencedTableColumn.optional
+
 			parsedTable.Columns.Set(columnName, newColumn)
 		}
 	}
 
-	return parsedTables
+	return nil, &parsedTables
 }

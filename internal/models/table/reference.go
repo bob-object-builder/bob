@@ -9,6 +9,7 @@ type Reference struct {
 	table           string
 	column          string
 	onDeleteCascade bool
+	optional        bool
 }
 
 func (r *Reference) toQuery() string {
@@ -18,5 +19,6 @@ func (r *Reference) toQuery() string {
 	}
 	tableName := utils.PascalToSnakeCase(r.table)
 	columnName := fmt.Sprintf("%s_%s", tableName, r.column)
+
 	return fmt.Sprintf(sql, columnName, tableName, r.column)
 }

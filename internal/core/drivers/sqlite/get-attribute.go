@@ -8,7 +8,7 @@ func GetAttribute(string string) string {
 	switch drivers.Attribute(string) {
 	case drivers.AutoIncrement:
 		return "AUTOINCREMENT"
-	case drivers.Required:
+	case drivers.Optional:
 		return "NOT NULL"
 	}
 	return ""

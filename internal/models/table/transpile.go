@@ -3,22 +3,30 @@ package table
 import (
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/core/lexer"
-	"salvadorsru/bob/internal/core/utils"
 	"strings"
 )
 
-func Transpile(driver drivers.Driver, tables lexer.Tables) (*utils.Object[*Table], string) {
-	parsedTables := Parse(tables)
+func Transpile(driver drivers.Driver, tables lexer.Tables) (error, string) {
+	parsedTablesError, parsedTables := Parse(tables)
+	if parsedTablesError != nil {
+		return parsedTablesError, ""
+	}
 	queries := []string{}
 
 	for _, tableName := range parsedTables.Order {
 		table := parsedTables.Get(tableName)
-		queries = append(queries, table.ToQuery(driver))
+
+		err, query := table.ToQuery(driver)
+		if err != nil {
+			return err, ""
+		}
+
+		queries = append(queries, query)
 	}
 
 	if len(queries) == 0 {
 		return nil, ""
 	}
 
-	return &parsedTables, strings.Join(queries, ";\n\n") + ";"
+	return nil, strings.Join(queries, ";\n\n") + ";"
 }

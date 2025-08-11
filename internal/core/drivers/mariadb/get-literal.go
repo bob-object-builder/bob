@@ -10,10 +10,6 @@ func GetLiteral(toGet string) string {
 		return "CURRENT_DATE"
 	case drivers.CurrentTime:
 		return "CURRENT_TIME"
-	case drivers.LocalTime:
-		return "CURRENT_TIME"
-	case drivers.LocalTimestamp:
-		return "CURRENT_TIMESTAMP"
 	case drivers.UtcTimestamp:
 		return "UTC_TIMESTAMP()"
 	case drivers.SysDate:

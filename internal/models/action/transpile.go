@@ -3,15 +3,13 @@ package action
 import (
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/core/lexer"
-	"salvadorsru/bob/internal/core/utils"
 	"salvadorsru/bob/internal/models/action/get"
 	"salvadorsru/bob/internal/models/action/insert"
 	"salvadorsru/bob/internal/models/action/set"
-	"salvadorsru/bob/internal/models/table"
 	"strings"
 )
 
-func Transpile(driver drivers.Driver, tables *utils.Object[*table.Table], blocks lexer.Blocks) string {
+func Transpile(driver drivers.Driver, blocks lexer.Blocks) (error, string) {
 	queries := []string{}
 	actions := Parse(blocks)
 
@@ -30,8 +28,8 @@ func Transpile(driver drivers.Driver, tables *utils.Object[*table.Table], blocks
 	}
 
 	if len(queries) == 0 {
-		return ""
+		return nil, ""
 	}
 
-	return strings.Join(queries, ";\n\n") + ";"
+	return nil, strings.Join(queries, ";\n\n") + ";"
 }

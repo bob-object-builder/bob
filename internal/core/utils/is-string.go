@@ -15,11 +15,19 @@ func IsStringStart(input string) bool {
 
 func IsStringEnd(input string) bool {
 	trimmed := strings.TrimSpace(input)
-
-	if (strings.HasSuffix(trimmed, "\"") && len(trimmed) > 1) ||
-		(strings.HasSuffix(trimmed, "'") && len(trimmed) > 1) {
-		return true
+	if len(trimmed) < 1 {
+		return false
 	}
 
-	return false
+	last := trimmed[len(trimmed)-1]
+	if last != '"' && last != '\'' {
+		return false
+	}
+
+	count := 0
+	for i := len(trimmed) - 2; i >= 0 && trimmed[i] == '\\'; i-- {
+		count++
+	}
+
+	return count%2 == 0
 }

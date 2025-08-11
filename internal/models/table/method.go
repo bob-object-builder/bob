@@ -2,8 +2,8 @@ package table
 
 import (
 	"fmt"
-	"salvadorsru/bob/internal/core/console"
 	"salvadorsru/bob/internal/core/drivers"
+	"salvadorsru/bob/internal/core/response"
 	"salvadorsru/bob/internal/core/utils"
 	"strings"
 )
@@ -19,18 +19,18 @@ func makeIndexSentence(indexableList ...Indexable) string {
 	return strings.Join(sentences, ";\n")
 }
 
-func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePrimeryKey bool) string {
+func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePrimaryKey bool) (error, string) {
 	column := t.Columns.Get(columnName)
 
 	columnType := driver.GetType(column.Type)
 
 	if columnType == "" {
-		console.Panic("error: undefined type '" + column.Type + "'")
+		return response.Error("undefined type '" + column.Type + "'"), ""
 	}
 
 	columnSentence := fmt.Sprintf("%s %s", columnName, columnType)
 
-	if hasOnlyOnePrimeryKey && column.IsPrimaryKey {
+	if hasOnlyOnePrimaryKey && column.IsPrimaryKey {
 		columnSentence += " PRIMARY KEY"
 	}
 
@@ -41,8 +41,14 @@ func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePr
 		}
 	}
 
-	if column.Default != nil {
+	if !column.IsOptional {
+		attribute := driver.GetAttribute(string(drivers.Optional))
+		if attribute != "" {
+			columnSentence += " " + attribute
+		}
+	}
 
+	if column.Default != nil {
 		literal := driver.GetLiteral(*column.Default)
 		if literal != "" {
 			columnSentence += fmt.Sprintf(" DEFAULT %v", utils.FormatQuote(literal))
@@ -53,17 +59,20 @@ func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePr
 
 	columnSentence = utils.Indent(columnSentence)
 
-	return columnSentence
+	return nil, columnSentence
 }
 
-func (t Table) ToQuery(driver drivers.Driver) string {
+func (t Table) ToQuery(driver drivers.Driver) (error, string) {
 	query := "CREATE TABLE %s (\n%s\n)"
 	columns := []string{}
 	hasOnlyOnePrimeryKey := len(t.PrimaryKeys) == 1
 	tableName := t.Name
 
 	for _, columnName := range t.Columns.Order {
-		columnSentence := makeColumn(driver, &t, columnName, hasOnlyOnePrimeryKey)
+		columnError, columnSentence := makeColumn(driver, &t, columnName, hasOnlyOnePrimeryKey)
+		if columnError != nil {
+			return columnError, ""
+		}
 		columns = append(columns, columnSentence)
 	}
 
@@ -95,5 +104,5 @@ func (t Table) ToQuery(driver drivers.Driver) string {
 		query += ";\n\n" + indexSentences
 	}
 
-	return query
+	return nil, query
 }

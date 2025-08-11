@@ -10,6 +10,7 @@ type Column struct {
 	Attributes      lexer.Instruction
 	IsPrimaryKey    bool
 	IsAutoIncrement bool
+	IsOptional      bool
 	Default         *string
 }
 
