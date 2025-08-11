@@ -10,9 +10,6 @@ func GetLiteral(toGet string) string {
 		return "CURRENT_DATE"
 	case drivers.CurrentTime:
 		return "CURRENT_TIME"
-	case drivers.LocalTime, drivers.LocalTimestamp:
-		// SQLite doesn't support localtime in DEFAULT, return empty
-		return ""
 	default:
 		return ""
 	}

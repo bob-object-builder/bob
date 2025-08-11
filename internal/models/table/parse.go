@@ -39,7 +39,8 @@ func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColu
 	isOptional := columnAttributes.Has(string(drivers.Optional))
 	if isReference {
 		referenceColumnName := utils.PascalToSnakeCase(columnName + "_" + columnType)
-		table.References.Set(referenceColumnName, Reference{columnName, columnType, false, isOptional})
+		isolated := columnAttributes.Has(string(drivers.Isolated))
+		table.References.Set(referenceColumnName, Reference{columnName, columnType, isolated, isOptional})
 		columnName = referenceColumnName
 	}
 

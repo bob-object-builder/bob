@@ -7,6 +7,7 @@ type Attributes struct {
 	AutoIncrement string
 	Unique        string
 	Optional      string
+	Isolated      string
 }
 
 type Attribute string
@@ -23,6 +24,8 @@ func (t Attributes) Get(attr Attribute) (string, bool) {
 		return t.Unique, true
 	case Optional:
 		return t.Optional, true
+	case Isolated:
+		return t.Isolated, true
 	default:
 		return "", false
 	}
@@ -34,5 +37,6 @@ const (
 	AutoIncrement Attribute = "auto_increment"
 	Unique        Attribute = "unique"
 	Optional      Attribute = "optional"
-	Default       Attribute = "=" // Default value
+	Default       Attribute = "="
+	Isolated      Attribute = "isolated"
 )

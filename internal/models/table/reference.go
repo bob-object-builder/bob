@@ -6,15 +6,15 @@ import (
 )
 
 type Reference struct {
-	table           string
-	column          string
-	onDeleteCascade bool
-	optional        bool
+	table      string
+	column     string
+	isIsolated bool
+	optional   bool
 }
 
 func (r *Reference) toQuery() string {
 	sql := "FOREIGN KEY (%s) REFERENCES %s(%s)"
-	if r.onDeleteCascade {
+	if !r.isIsolated {
 		sql += " ON DELETE CASCADE"
 	}
 	tableName := utils.PascalToSnakeCase(r.table)
