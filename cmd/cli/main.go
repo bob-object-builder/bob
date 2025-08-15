@@ -73,6 +73,7 @@ func main() {
 			return
 		}
 
+		console.Success()
 		console.Log(tables, actions)
 	} else {
 
