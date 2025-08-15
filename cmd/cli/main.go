@@ -1,163 +1,172 @@
 package main
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+
+	"salvadorsru/bob/internal/core/cli"
 	"salvadorsru/bob/internal/core/console"
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/core/file"
 	"salvadorsru/bob/internal/core/response"
 	"salvadorsru/bob/internal/core/utils"
 	"salvadorsru/bob/internal/transpiler"
-	"sync"
 )
 
-var version string = "0.0.0"
+var version = "0.0.0"
 
 func main() {
-	console.Clear()
-
-	var queryFile string
-	var driverName string
-	var queryString string
-	var outputFile string
-	var searchMode bool
-	var queries string
-	var searchTarget string = "."
-
-	var tables string
-	var actions string
-	var transpilerError error
-
-	for i, arg := range os.Args {
-		if arg == "-v" || arg == "--version" {
-			console.Log(version)
-			os.Exit(0)
-		}
-
-		getFlagValue := func(i int, shortFlag string, longFlag string, isObligatory bool) (string, bool) {
-			arg := os.Args[i]
-			if (arg == shortFlag || (longFlag != "" && arg == longFlag)) && i+1 < len(os.Args) {
-				nextArg := os.Args[i+1]
-				if len(nextArg) > 0 && nextArg[0] == '-' {
-					if isObligatory {
-						console.Panic("expected value after %s, got flag %s\n", arg, nextArg)
-						os.Exit(1)
-					} else {
-						return "", true
-					}
-				}
-				return nextArg, true
-			}
-			return "", false
-		}
-
-		if val, ok := getFlagValue(i, "-i", "--input", true); ok {
-			queryFile = val
-		}
-
-		if val, ok := getFlagValue(i, "-d", "--driver", true); ok {
-			driverName = val
-		}
-
-		if val, ok := getFlagValue(i, "-q", "--query", true); ok {
-			queryString = val
-		}
-
-		if val, ok := getFlagValue(i, "-o", "--output", true); ok {
-			outputFile = val
-		}
-
-		if arg == "-s" || arg == "--search" {
-			searchMode = true
-			if val, hasValue := getFlagValue(i, "-s", "--search", false); hasValue {
-				if val != "" {
-					searchTarget = val
-				}
-			}
-		}
+	argsError, args := cli.ProcessArgs(version)
+	if argsError != nil {
+		console.Panic(argsError.Error())
+		return
 	}
 
-	if driverName == "" {
-		console.Panic("no driver specified. Use -d <driver> or --driver <driver> (mariadb, postgresql, sqlite)")
+	if args.Driver == "" {
+		console.Panic("driver not specified")
+		return
+	}
+	if args.OutputIsFile {
+		console.Panic("output must be a folder")
+		return
 	}
 
-	if searchMode {
-		files, err := utils.FindBobFiles(searchTarget)
+	fileList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
+	results := readFiles(fileList)
 
-		if err != nil {
-			console.Panic("searching for .bob files:", err)
+	var (
+		allInput      strings.Builder
+		filesToCreate []file.File
+		hasOutput     = args.Output != ""
+	)
+
+	for _, result := range results {
+		if result.Err != nil {
+			console.Log(result.Err)
+			continue
 		}
 
-		if len(files) == 0 {
-			console.Panic("no .bob files found in the current directory and subdirectories.")
+		actionErr, _, action := transpiler.TranspileActions(drivers.Motor(args.Driver), result.Content)
+		if actionErr != nil {
+			console.Panic(actionErr.Error())
+			return
 		}
 
-		var wg sync.WaitGroup
-
-		results := make([]file.File, len(files))
-
-		for i, fileContent := range files {
-			wg.Add(1)
-			go func(idx int, filename string) {
-				defer wg.Done()
-				queryBytes, err := os.ReadFile(filename)
-				if err != nil {
-					results[idx] = file.File{Content: "", Err: response.Error("reading %s", filename), Ref: filename}
-					return
-				}
-				results[idx] = file.File{Content: string(queryBytes), Err: nil, Ref: filename}
-			}(i, fileContent)
-		}
-		wg.Wait()
-
-		var allInput string
-		for _, res := range results {
-			if res.Err != nil {
-				console.Log(res.Err)
-				continue
-			}
-			allInput += res.Content + "\n"
+		if hasOutput {
+			fileName := strings.TrimSuffix(filepath.Base(result.Ref), ".bob") + ".sql"
+			filesToCreate = append(filesToCreate, file.File{
+				Ref:     fileName,
+				Content: action,
+			})
 		}
 
-		transpilerError, tables, actions = transpiler.Transpile(drivers.Motor(driverName), allInput)
+		allInput.WriteString(result.Content)
+		allInput.WriteByte('\n')
+	}
+
+	if !hasOutput {
+		tablesErr, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), allInput.String())
+		if tablesErr != nil {
+			console.Panic(tablesErr.Error())
+			return
+		}
+
+		console.Log(tables, actions)
 	} else {
-		var input string
 
-		if queryString != "" {
-			input = queryString
-		} else {
-			if queryFile == "" {
-				console.Panic("no input file specified. Use -i <file> or provide a query with -q <query>")
-			}
-			queryBytes, err := os.ReadFile(queryFile)
-			if err != nil {
-				console.Panic("not found", queryFile)
-			}
-			input = string(queryBytes)
+		tablesErr, tables, _ := transpiler.TranspileTables(drivers.Motor(args.Driver), allInput.String())
+		if tablesErr != nil {
+			console.Panic(tablesErr.Error())
+			return
 		}
 
-		transpilerError, tables, actions = transpiler.Transpile(drivers.Motor(driverName), input)
+		filesToCreate = append(filesToCreate, file.File{
+			Ref:     "tables.sql",
+			Content: tables,
+		})
+
+		writeFiles(filesToCreate, args.Output, args.OutputIsFolder)
+	}
+}
+
+func collectFiles(input string, isFile, isFolder bool) []string {
+	var fileList []string
+	if isFile {
+		return append(fileList, input)
+	}
+	if isFolder {
+		files, err := utils.FindBobFiles(input)
+		if err != nil {
+			console.Panic(err.Error())
+			return nil
+		}
+		return append(fileList, files...)
+	}
+	return fileList
+}
+
+func readFiles(fileList []string) []file.File {
+	results := make([]file.File, len(fileList))
+	var wg sync.WaitGroup
+
+	for i, filePath := range fileList {
+		wg.Add(1)
+		go func(idx int, path string) {
+			defer wg.Done()
+			data, err := os.ReadFile(path)
+			if err != nil {
+				results[idx] = file.File{
+					Content: "",
+					Err:     response.Error("reading %s", path),
+					Ref:     path,
+				}
+				return
+			}
+			results[idx] = file.File{
+				Content: string(data),
+				Ref:     path,
+			}
+		}(i, filePath)
 	}
 
-	if transpilerError != nil {
-		console.Panic(transpilerError.Error())
-	}
+	wg.Wait()
+	return results
+}
 
-	queries = fmt.Sprintf("%s\n\n%s\n", tables, actions)
-	if outputFile != "" {
-		file, err := os.Create(outputFile)
+func writeFiles(files []file.File, output string, outputIsFolder bool) {
+	for i, f := range files {
+		if f.Err != nil {
+			console.Log(f.Err)
+			continue
+		}
+		if !outputIsFolder {
+			continue
+		}
+
+		baseOut := filepath.Join(output, "out")
+		if i != len(files)-1 {
+			baseOut = filepath.Join(baseOut, "actions")
+		}
+
+		if err := os.MkdirAll(baseOut, 0755); err != nil {
+			console.Panic("creating directory", err)
+			return
+		}
+
+		fullPath := filepath.Join(baseOut, filepath.Base(f.Ref))
+
+		fd, err := os.Create(fullPath)
 		if err != nil {
 			console.Panic("creating file", err)
+			return
 		}
-		_, err = file.Write([]byte(queries))
-		if err != nil {
-			file.Close()
+		if _, err := fd.Write([]byte(f.Content)); err != nil {
+			fd.Close()
 			console.Panic("writing to file", err)
+			return
 		}
-		console.Success("file created at", outputFile)
-		defer file.Close()
-	} else {
-		console.Log(queries)
+		fd.Close()
 	}
 }
