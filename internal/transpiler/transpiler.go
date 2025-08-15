@@ -27,23 +27,44 @@ func getDriver(motor drivers.Motor) (error, *drivers.Driver) {
 	return nil, &driver
 }
 
-func Transpile(motor drivers.Motor, input string) (error, string, string) {
-	driverError, driver := getDriver(motor)
-	if driverError != nil {
-		return driverError, "", ""
+type TranspilerMaker func(motor drivers.Motor, input string) (error, string, string)
+
+func makeTranspiler(transpileTables bool, transpileActions bool) TranspilerMaker {
+	return func(motor drivers.Motor, input string) (error, string, string) {
+		var (
+			tablesQueries = ""
+			actionQueries = ""
+		)
+
+		var tablesQueriesError, actionQueriesError error
+
+		driverError, driver := getDriver(motor)
+		if driverError != nil {
+			return driverError, "", ""
+		}
+
+		program := lexer.Parser(input)
+
+		if transpileTables {
+			tablesQueriesError, tablesQueries = table.Transpile(*driver, program.Tables)
+		}
+
+		if transpileActions {
+			actionQueriesError, actionQueries = action.Transpile(*driver, program.Actions)
+		}
+
+		if tablesQueriesError != nil {
+			return tablesQueriesError, "", ""
+		}
+
+		if actionQueriesError != nil {
+			return actionQueriesError, "", ""
+		}
+
+		return nil, tablesQueries, actionQueries
 	}
-
-	program := lexer.Parser(input)
-	tablesQueriesError, tablesQueries := table.Transpile(*driver, program.Tables)
-	actionQueriesError, actionQueries := action.Transpile(*driver, program.Actions)
-
-	if tablesQueriesError != nil {
-		return tablesQueriesError, "", ""
-	}
-
-	if actionQueriesError != nil {
-		return actionQueriesError, "", ""
-	}
-
-	return nil, tablesQueries, actionQueries
 }
+
+var Transpile = makeTranspiler(true, true)
+var TranspileTables = makeTranspiler(true, false)
+var TranspileActions = makeTranspiler(false, true)
