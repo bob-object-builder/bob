@@ -15,7 +15,7 @@ import (
 	"salvadorsru/bob/internal/transpiler"
 )
 
-var version = "0.0.0"
+var version = "v0.0.0"
 
 func main() {
 	argsError, args := cli.ProcessArgs(version)
