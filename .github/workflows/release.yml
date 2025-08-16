@@ -38,7 +38,7 @@ jobs:
       # Build WASM
       - name: Build WASM
         run: |
-          GOOS=js GOARCH=wasm go build -o bob-wasm-${{ matrix.goos }}-${{ matrix.goarch }}.wasm ./cmd/bob
+          GOOS=js GOARCH=wasm go build -o bob-wasm-${{ matrix.goos }}-${{ matrix.goarch }}.wasm ./cmd/wasm/main.go
 
       # Upload artifacts for Release
       - name: Upload Release Assets
