@@ -22,7 +22,7 @@ jobs:
             ext: ""
           - goos: windows
             goarch: amd64
-            ext: ".exe"
+            ext: ""
 
     steps:
       - name: Checkout repository
@@ -38,14 +38,15 @@ jobs:
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/cli/main.go
 
       - name: Build WASM
+        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
         run: |
-          GOOS=js GOARCH=wasm go build -o bob-wasm-${{ matrix.goos }}-${{ matrix.goarch }}.wasm ./cmd/wasm/main.go
+          GOOS=js GOARCH=wasm go build -o bob.wasm ./cmd/wasm/main.go
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
           files: |
             bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
-            bob-wasm-${{ matrix.goos }}-${{ matrix.goarch }}.wasm
+            bob.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
