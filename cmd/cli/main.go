@@ -67,6 +67,7 @@ func main() {
 	}
 
 	if !hasOutput {
+
 		tablesErr, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), allInput.String())
 		if tablesErr != nil {
 			console.Panic(tablesErr.Error())
@@ -75,6 +76,7 @@ func main() {
 
 		console.Success()
 		console.Log(tables, actions)
+
 	} else {
 
 		tablesErr, tables, _ := transpiler.TranspileTables(drivers.Motor(args.Driver), allInput.String())
@@ -90,6 +92,7 @@ func main() {
 
 		writeFiles(filesToCreate, args.Output, args.OutputIsFolder)
 	}
+
 }
 
 func collectFiles(input string, isFile, isFolder bool) []string {
@@ -146,7 +149,12 @@ func writeFiles(files []file.File, output string, outputIsFolder bool) {
 			continue
 		}
 
-		baseOut := filepath.Join(output, "out")
+		defaultOutputFolder := ""
+		if output == "." {
+			defaultOutputFolder = "sql"
+		}
+
+		baseOut := filepath.Join(output, defaultOutputFolder)
 		if i != len(files)-1 {
 			baseOut = filepath.Join(baseOut, "actions")
 		}

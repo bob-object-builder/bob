@@ -2,6 +2,8 @@ package utils
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type PathType int
@@ -12,7 +14,7 @@ const (
 	PathIsDir
 )
 
-func CheckPath(path string) PathType {
+func ValidatePath(path string) PathType {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return PathNotExist
@@ -25,4 +27,26 @@ func CheckPath(path string) PathType {
 	}
 
 	return PathIsFile
+}
+
+func CheckPath(path string) PathType {
+	if path == "" {
+		return PathNotExist
+	}
+
+	if path == "." || path == ".." {
+		return PathIsDir
+	}
+
+	cleaned := filepath.Clean(path)
+
+	if strings.HasSuffix(path, "/") {
+		return PathIsDir
+	}
+
+	if filepath.Ext(cleaned) != "" {
+		return PathIsFile
+	}
+
+	return PathIsDir
 }

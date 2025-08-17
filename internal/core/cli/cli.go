@@ -49,7 +49,7 @@ func ProcessArgs(version string) (error, *args) {
 		}
 
 		if val, ok := getFlagValue(i, "-i", "--input", true); ok {
-			pathType := utils.CheckPath(val)
+			pathType := utils.ValidatePath(val)
 
 			if utils.PathNotExist == pathType {
 				return errors.New("invalid path type"), nil
