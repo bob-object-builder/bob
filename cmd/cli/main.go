@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,66 +34,91 @@ func main() {
 		return
 	}
 
-	fileList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
-	results := readFiles(fileList)
-
 	var (
 		allInput      strings.Builder
 		filesToCreate []file.File
 		hasOutput     = args.Output != ""
 	)
 
-	for _, result := range results {
-		if result.Err != nil {
-			console.Log(result.Err)
-			continue
-		}
+	if args.Query != "" {
 
-		actionErr, _, action := transpiler.TranspileActions(drivers.Motor(args.Driver), result.Content)
-		if actionErr != nil {
-			console.Panic(actionErr.Error())
+		transpileError, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), args.Query)
+		if transpileError != nil {
+			console.Panic(transpileError.Error())
 			return
 		}
 
-		if hasOutput {
-			fileName := strings.TrimSuffix(filepath.Base(result.Ref), ".bob") + ".sql"
-			filesToCreate = append(filesToCreate, file.File{
-				Ref:     fileName,
-				Content: action,
-			})
+		if !hasOutput {
+			console.Success()
+			console.Log(tables, actions)
+		} else {
+			writeFiles([]file.File{
+				{
+					Ref:     "actions.sql",
+					Content: actions,
+				},
+				{
+					Ref:     "tables.sql",
+					Content: tables,
+				},
+			}, args.Output, args.OutputIsFolder)
 		}
-
-		allInput.WriteString(result.Content)
-		allInput.WriteByte('\n')
-	}
-
-	if !hasOutput {
-
-		tablesErr, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), allInput.String())
-		if tablesErr != nil {
-			console.Panic(tablesErr.Error())
-			return
-		}
-
-		console.Success()
-		console.Log(tables, actions)
 
 	} else {
+		fileList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
+		results := readFiles(fileList)
 
-		tablesErr, tables, _ := transpiler.TranspileTables(drivers.Motor(args.Driver), allInput.String())
-		if tablesErr != nil {
-			console.Panic(tablesErr.Error())
-			return
+		for _, result := range results {
+			if result.Err != nil {
+				console.Log(result.Err)
+				continue
+			}
+
+			actionErr, _, action := transpiler.TranspileActions(drivers.Motor(args.Driver), result.Content)
+			if actionErr != nil {
+				console.Panic(actionErr.Error())
+				return
+			}
+
+			if hasOutput {
+				fileName := strings.TrimSuffix(filepath.Base(result.Ref), ".bob") + ".sql"
+				filesToCreate = append(filesToCreate, file.File{
+					Ref:     fileName,
+					Content: action,
+				})
+			}
+
+			allInput.WriteString(result.Content)
+			allInput.WriteByte('\n')
 		}
 
-		filesToCreate = append(filesToCreate, file.File{
-			Ref:     "tables.sql",
-			Content: tables,
-		})
+		if !hasOutput {
 
-		writeFiles(filesToCreate, args.Output, args.OutputIsFolder)
+			tablesErr, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), allInput.String())
+			if tablesErr != nil {
+				console.Panic(tablesErr.Error())
+				return
+			}
+
+			console.Success()
+			console.Log(tables, actions)
+
+		} else {
+
+			tablesErr, tables, _ := transpiler.TranspileTables(drivers.Motor(args.Driver), allInput.String())
+			if tablesErr != nil {
+				console.Panic(tablesErr.Error())
+				return
+			}
+
+			filesToCreate = append(filesToCreate, file.File{
+				Ref:     "tables.sql",
+				Content: tables,
+			})
+
+			writeFiles(filesToCreate, args.Output, args.OutputIsFolder)
+		}
 	}
-
 }
 
 func collectFiles(input string, isFile, isFolder bool) []string {
@@ -140,42 +166,63 @@ func readFiles(fileList []string) []file.File {
 }
 
 func writeFiles(files []file.File, output string, outputIsFolder bool) {
+	if !outputIsFolder {
+		return
+	}
+
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 8)
+	errCh := make(chan error, len(files))
+
 	for i, f := range files {
-		if f.Err != nil {
-			console.Log(f.Err)
-			continue
-		}
-		if !outputIsFolder {
+		if f.Err != nil || f.Content == "" {
 			continue
 		}
 
-		defaultOutputFolder := ""
-		if output == "." {
-			defaultOutputFolder = "sql"
-		}
+		wg.Add(1)
+		sem <- struct{}{}
 
-		baseOut := filepath.Join(output, defaultOutputFolder)
-		if i != len(files)-1 {
-			baseOut = filepath.Join(baseOut, "actions")
-		}
+		go func(i int, f file.File) {
+			defer wg.Done()
+			defer func() { <-sem }()
 
-		if err := os.MkdirAll(baseOut, 0755); err != nil {
-			console.Panic("creating directory", err)
-			return
-		}
+			defaultOutputFolder := ""
+			if output == "." {
+				defaultOutputFolder = "sql"
+			}
 
-		fullPath := filepath.Join(baseOut, filepath.Base(f.Ref))
+			baseOut := filepath.Join(output, defaultOutputFolder)
+			if i != len(files)-1 {
+				baseOut = filepath.Join(baseOut, "actions")
+			}
 
-		fd, err := os.Create(fullPath)
+			if err := os.MkdirAll(baseOut, 0755); err != nil {
+				errCh <- fmt.Errorf("creating directory %w", err)
+				return
+			}
+
+			fullPath := filepath.Join(baseOut, filepath.Base(f.Ref))
+
+			fd, err := os.Create(fullPath)
+			if err != nil {
+				errCh <- fmt.Errorf("creating file %w", err)
+				return
+			}
+			defer fd.Close()
+
+			if _, err := fd.Write([]byte(f.Content)); err != nil {
+				errCh <- fmt.Errorf("writing to file %w", err)
+				return
+			}
+		}(i, f)
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
 		if err != nil {
-			console.Panic("creating file", err)
-			return
+			console.Log("Error:", err)
 		}
-		if _, err := fd.Write([]byte(f.Content)); err != nil {
-			fd.Close()
-			console.Panic("writing to file", err)
-			return
-		}
-		fd.Close()
 	}
 }
