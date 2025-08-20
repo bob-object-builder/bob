@@ -16,7 +16,11 @@ func Transpile(driver drivers.Driver, blocks lexer.Blocks) (error, string) {
 	for _, action := range actions {
 		switch v := action.(type) {
 		case get.Get:
-			query := v.ToQuery(driver)
+			queryError, query := v.ToQuery(driver)
+			if queryError != nil {
+				return queryError, ""
+			}
+
 			queries = append(queries, query)
 		case insert.New:
 			query := v.ToQuery(driver)

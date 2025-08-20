@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"salvadorsru/bob/internal/core/drivers"
 	"salvadorsru/bob/internal/core/lexer"
+	"salvadorsru/bob/internal/core/response"
 	"salvadorsru/bob/internal/core/utils"
 	"strings"
 )
 
-func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin bool) {
+func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin bool) error {
 	for _, selectedName := range a.Selected.Keys() {
 		value := a.Selected.Get(selectedName)
 
@@ -45,16 +46,28 @@ func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin b
 			selectedName = utils.Indent(selectedName)
 			*selected = append(*selected, selectedName)
 		case Get:
-			query := utils.IndentLines(v.ToQuery(driver))
+			subQueryError, subQuery := v.ToQuery(driver)
+			if subQueryError != nil {
+				return subQueryError
+			}
+
+			query := utils.IndentLines(subQuery)
+
+			if selectedName == "" {
+				return response.Error("you must set an alias in subquery")
+			}
+
 			selectedName = fmt.Sprintf("(\n%s\n) as %s", query, selectedName)
 			selectedName = utils.IndentLines(selectedName)
 			*selected = append(*selected, selectedName)
 			continue
 		}
 	}
+
+	return nil
 }
 
-func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) ([]string, []*Get) {
+func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) (error, []string, []*Get) {
 	joins := []string{}
 	joinQueries := []*Get{}
 
@@ -69,16 +82,22 @@ func ParseJoins(driver drivers.Driver, a *Get, selected *[]string) ([]string, []
 			joinSentence := fmt.Sprintf("LEFT JOIN %s ON %s = %s", toJoin.Table, leftOn, rightOn)
 			joins = append(joins, joinSentence)
 
-			ParseSelections(driver, toJoin.Query, selected, true)
+			parseSelectionError := ParseSelections(driver, toJoin.Query, selected, true)
+			if parseSelectionError != nil {
+				return parseSelectionError, nil, nil
+			}
 			joinQueries = append(joinQueries, toJoin.Query)
 
-			subJoins, subJoinQueries := ParseJoins(driver, toJoin.Query, selected)
+			subJoinError, subJoins, subJoinQueries := ParseJoins(driver, toJoin.Query, selected)
+			if subJoinError != nil {
+				return subJoinError, nil, nil
+			}
 			joins = append(joins, subJoins...)
 			joinQueries = append(joinQueries, subJoinQueries...)
 		}
 	}
 
-	return joins, joinQueries
+	return nil, joins, joinQueries
 }
 
 func ParseOperations(actions ...*Get) []string {
@@ -183,18 +202,24 @@ func ParseOperations(actions ...*Get) []string {
 	return operations
 }
 
-func (a Get) ToQuery(driver drivers.Driver) string {
+func (a Get) ToQuery(driver drivers.Driver) (error, string) {
 	query := "SELECT\n%s \nFROM %s"
 
 	selected := []string{}
 
-	ParseSelections(driver, &a, &selected, false)
+	parseSelections := ParseSelections(driver, &a, &selected, false)
+	if parseSelections != nil {
+		return parseSelections, ""
+	}
 
 	if len(selected) < 1 {
 		selected = append(selected, "*")
 	}
 
-	joins, joinQueries := ParseJoins(driver, &a, &selected)
+	parseJoinsError, joins, joinQueries := ParseJoins(driver, &a, &selected)
+	if parseJoinsError != nil {
+		return parseJoinsError, ""
+	}
 
 	query = fmt.Sprintf(query, strings.Join(selected, ",\n"), a.Table)
 
@@ -210,5 +235,5 @@ func (a Get) ToQuery(driver drivers.Driver) string {
 		query += " " + operationSentence
 	}
 
-	return query
+	return nil, query
 }

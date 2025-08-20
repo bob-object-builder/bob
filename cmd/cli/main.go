@@ -117,6 +117,7 @@ func main() {
 			})
 
 			writeFiles(filesToCreate, args.Output, args.OutputIsFolder)
+			console.Success("transpiled to " + args.Output)
 		}
 	}
 }
