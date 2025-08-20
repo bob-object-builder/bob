@@ -9,6 +9,7 @@ const (
 	LeftJoinAlias Command = "->"
 	New           Command = "new"
 	Set           Command = "set"
+	Delete        Command = "delete"
 )
 
 type Direction string
@@ -19,7 +20,7 @@ const (
 
 func IsCommand(s string) bool {
 	switch Command(s) {
-	case Table, Get, LeftJoin, LeftJoinAlias, New, Set:
+	case Table, Get, LeftJoin, LeftJoinAlias, New, Set, Delete:
 		return true
 	default:
 		return false
