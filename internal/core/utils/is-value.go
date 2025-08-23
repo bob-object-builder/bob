@@ -17,6 +17,10 @@ func IsValue(input string) bool {
 		return true
 	}
 
+	if input == "?" {
+		return true
+	}
+
 	if _, err := strconv.Atoi(trimmed); err == nil {
 		return true
 	}
