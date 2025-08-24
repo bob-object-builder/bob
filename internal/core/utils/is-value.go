@@ -17,7 +17,7 @@ func IsValue(input string) bool {
 		return true
 	}
 
-	if input == "?" {
+	if strings.HasPrefix(input, "?") {
 		return true
 	}
 
