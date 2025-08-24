@@ -39,7 +39,7 @@ func ParseSelections(driver drivers.Driver, a *Get, selected *[]string, isJoin b
 					}
 
 				} else {
-					selectedName = fmt.Sprintf("%s as %s_%s", computedSelected, a.Table, selectedName)
+					selectedName = fmt.Sprintf("%s as %s", computedSelected, selectedName)
 				}
 			}
 
