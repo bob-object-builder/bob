@@ -30,3 +30,7 @@ func (b *Block) Children() []any {
 func (b *Block) ActionIs(toBe ...Command) bool {
 	return slices.Contains(toBe, b.Command)
 }
+
+func (b *Block) ActionHas(toBe string) bool {
+	return slices.Contains(b.actions, toBe)
+}

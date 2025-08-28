@@ -61,9 +61,15 @@ func makeColumn(driver drivers.Driver, t *Table, columnName string, hasOnlyOnePr
 
 	return nil, columnSentence
 }
-
 func (t Table) ToQuery(driver drivers.Driver) (error, string) {
-	query := "CREATE TABLE %s (\n%s\n)"
+	var ifNotExists string
+	if t.Required {
+		ifNotExists = ""
+	} else {
+		ifNotExists = "IF NOT EXISTS "
+	}
+
+	query := "CREATE TABLE %s%s (\n%s\n)"
 	columns := []string{}
 	hasOnlyOnePrimeryKey := len(t.PrimaryKeys) == 1
 	tableName := t.Name
@@ -98,7 +104,7 @@ func (t Table) ToQuery(driver drivers.Driver) (error, string) {
 
 	columnsSentence := strings.Join(columns, ",\n")
 
-	query = fmt.Sprintf(query, tableName, columnsSentence)
+	query = fmt.Sprintf(query, ifNotExists, tableName, columnsSentence)
 
 	if indexSentences != "" {
 		query += ";\n\n" + indexSentences

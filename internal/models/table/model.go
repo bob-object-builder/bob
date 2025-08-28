@@ -22,4 +22,5 @@ type Table struct {
 	Uniques     []string
 	PrimaryKeys []string
 	References  utils.Object[Reference]
+	Required    bool
 }

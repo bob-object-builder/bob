@@ -115,7 +115,9 @@ func parseColumn(table *Table, tableName string, v lexer.Instruction, forcedColu
 func parseTable(tableId string, block lexer.Block) utils.Object[*Table] {
 	tables := utils.Object[*Table]{}
 	tableName := utils.PascalToSnakeCase(tableId)
-	table := Table{Id: tableId, Name: tableName, Columns: utils.Object[*Column]{}, References: utils.Object[Reference]{}}
+	isRequired := block.ActionHas("required")
+
+	table := Table{Id: tableId, Name: tableName, Required: isRequired, Columns: utils.Object[*Column]{}, References: utils.Object[Reference]{}}
 
 	for _, attr := range block.Children() {
 		switch v := attr.(type) {
