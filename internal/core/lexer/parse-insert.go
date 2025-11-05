@@ -62,7 +62,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) error {
 
 	if i.IsBulk {
 		if i.Columns.Length() != values.Length() {
-			return fmt.Errorf("column '%s' is not receiving a value", *i.Columns.GetLast())
+			return fmt.Errorf("column '%s' is not receiving a value at [%s]", *i.Columns.GetLast(), strings.Join(l.tokens, ", "))
 		}
 
 		i.Values.Push(*values)
