@@ -1,24 +1,19 @@
 package table
 
-import (
-	"fmt"
-	"salvadorsru/bob/internal/core/utils"
-)
+import "salvadorsru/bob/internal/lib/formatter"
 
 type Reference struct {
-	table      string
-	column     string
-	isIsolated bool
-	optional   bool
+	Table      string
+	Column     string
+	IsOptional bool
 }
 
-func (r *Reference) toQuery() string {
-	sql := "FOREIGN KEY (%s) REFERENCES %s(%s)"
-	if !r.isIsolated {
-		sql += " ON DELETE CASCADE"
-	}
-	tableName := utils.PascalToSnakeCase(r.table)
-	columnName := fmt.Sprintf("%s_%s", tableName, r.column)
-
-	return fmt.Sprintf(sql, columnName, tableName, r.column)
+func (t *Table) AddReference(table string, column string, isOptional bool) {
+	t.References.Push(
+		Reference{
+			Table:      formatter.ToSnakeCase(table),
+			Column:     formatter.ToSnakeCase(column),
+			IsOptional: isOptional,
+		},
+	)
 }
