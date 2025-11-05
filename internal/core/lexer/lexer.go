@@ -162,7 +162,9 @@ lineLoop:
 			case *join.Join:
 				l.ParseLeftJoin(v)
 			case *insert.Insert:
-				l.ParseInsert(v)
+				if err := l.ParseInsert(v); err != nil {
+					return err, nil, nil
+				}
 			case *remove.Remove:
 				l.ParseRemove(v)
 			}

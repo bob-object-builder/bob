@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
@@ -8,29 +9,29 @@ import (
 	"strings"
 )
 
-func (l *Lexer) ParseInsert(i *insert.Insert) {
+func (l *Lexer) ParseInsert(i *insert.Insert) error {
 	if l.IsOpenKey() {
 		if i.Columns.Length() > 0 {
 			i.IsBulk = true
 		}
 		i.Capturing = true
-		return
+		return nil
 	}
 
 	if l.IsCloseKey() {
 		l.actions.Push(*i)
 		l.stack.Clean()
-		return
+		return nil
 	}
 
 	if i.IsTargetEmpty() {
 		i.SetTarget(l.token)
-		return
+		return nil
 	}
 
 	if !i.Capturing {
 		i.AddColumn(l.token)
-		return
+		return nil
 	}
 
 	if !i.IsBulk {
@@ -38,17 +39,17 @@ func (l *Lexer) ParseInsert(i *insert.Insert) {
 		l.tokens = l.tokens[1:]
 	}
 
-	parsing_string := false
+	parsingString := false
 	buffer := array.New[string]()
 	values := array.New[string]()
 
 	for _, token := range l.tokens {
-		if parsing_string || checker.IsStringStart(token) {
-			parsing_string = true
+		if parsingString || checker.IsStringStart(token) {
+			parsingString = true
 			buffer.Push(token)
 
 			if checker.IsStringEnd(token) {
-				parsing_string = false
+				parsingString = false
 				joined := strings.Join(*buffer, " ")
 				buffer.Clean()
 				values.Push(formatter.String(joined))
@@ -60,6 +61,10 @@ func (l *Lexer) ParseInsert(i *insert.Insert) {
 	}
 
 	if i.IsBulk {
+		if i.Columns.Length() != values.Length() {
+			return fmt.Errorf("column '%s' is not receiving a value", *i.Columns.GetLast())
+		}
+
 		i.Values.Push(*values)
 	} else {
 		row := i.Values.Get(0)
@@ -72,4 +77,6 @@ func (l *Lexer) ParseInsert(i *insert.Insert) {
 	}
 
 	l.NextLine()
+
+	return nil
 }
