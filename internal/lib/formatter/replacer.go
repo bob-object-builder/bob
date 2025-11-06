@@ -9,9 +9,9 @@ import (
 //   - Reserved keywords (case-insensitive) are not modified.
 //   - Identifiers that are part of a dotted expression (e.g., user.orders)
 //     are not modified, even if spaces exist around the dot.
-//   - Content inside string literals ("string", 'char', `raw string`) is not modified.
+//   - Content inside string literals ("string", 'char', `raw string`) is not modified,
+//     except double quotes at the start are converted to single quotes.
 func PrefixWith(prefix string, target string, reservedKeywords []string) string {
-	// Prepare a set of reserved keywords in lowercase for case-insensitive comparison
 	reserved := make(map[string]struct{}, len(reservedKeywords))
 	for _, kw := range reservedKeywords {
 		reserved[strings.ToLower(kw)] = struct{}{}
@@ -27,14 +27,19 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 		// Handle string/char/raw literals
 		if c == '"' || c == '\'' || c == '`' {
 			startQuote := c
-			b.WriteByte(c)
+			if c == '"' {
+				// Replace starting double quote with single quote
+				b.WriteByte('\'')
+			} else {
+				b.WriteByte(c)
+			}
 			i++
 			for i < n {
 				ch := target[i]
-				b.WriteByte(ch)
-				i++
 				if ch == '\\' && startQuote != '`' {
-					// Escape sequence: copy the next character if it exists
+					// Escape sequence: copy both characters
+					b.WriteByte(ch)
+					i++
 					if i < n {
 						b.WriteByte(target[i])
 						i++
@@ -42,8 +47,17 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 					continue
 				}
 				if ch == startQuote {
+					// End of literal
+					if startQuote == '"' {
+						b.WriteByte('\'') // Replace ending double quote
+					} else {
+						b.WriteByte(ch)
+					}
+					i++
 					break
 				}
+				b.WriteByte(ch)
+				i++
 			}
 			continue
 		}
@@ -63,13 +77,11 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 			word := target[start:i]
 			lower := strings.ToLower(word)
 
-			// Reserved keyword → leave unchanged
 			if _, ok := reserved[lower]; ok {
 				b.WriteString(word)
 				continue
 			}
 
-			// Check previous non-space character
 			prev := start - 1
 			for prev >= 0 && unicode.IsSpace(rune(target[prev])) {
 				prev--
@@ -79,7 +91,6 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 				continue
 			}
 
-			// Check next non-space character
 			next := i
 			for next < n && unicode.IsSpace(rune(target[next])) {
 				next++
@@ -89,13 +100,11 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 				continue
 			}
 
-			// Valid identifier → prepend prefix
 			b.WriteString(prefix)
 			b.WriteString(word)
 			continue
 		}
 
-		// Any other character: copy as-is
 		b.WriteByte(c)
 		i++
 	}
