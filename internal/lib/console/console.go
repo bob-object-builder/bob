@@ -9,12 +9,12 @@ import (
 )
 
 func Log(v ...any) {
-	format := strings.TrimSpace(strings.Repeat("%v ", len(v)))
-	fmt.Printf(format+"\n", v...)
+	text := fmt.Sprint(v...)
+	text = strings.TrimSpace(text)
+	fmt.Println(text)
 }
 
 func Success(v ...any) {
-	// Log("success: " + response.Success(v...))
 	Log("success")
 }
 
