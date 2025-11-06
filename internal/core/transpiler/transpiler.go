@@ -5,6 +5,7 @@ import (
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/models/get"
 	"salvadorsru/bob/internal/models/insert"
+	"salvadorsru/bob/internal/models/raw"
 	"salvadorsru/bob/internal/models/remove"
 	"salvadorsru/bob/internal/models/table"
 	"strings"
@@ -57,6 +58,8 @@ func (t Transpiler) TranspileActions() (error, string) {
 			actions.Push(t.TranspileInsert(a))
 		case remove.Remove:
 			actions.Push(t.TranspileRemove(a))
+		case raw.Raw:
+			actions.Push(t.TranspileRaw(a))
 		}
 	}
 

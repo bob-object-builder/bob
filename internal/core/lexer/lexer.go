@@ -10,6 +10,7 @@ import (
 	"salvadorsru/bob/internal/models/get"
 	"salvadorsru/bob/internal/models/insert"
 	"salvadorsru/bob/internal/models/join"
+	"salvadorsru/bob/internal/models/raw"
 	"salvadorsru/bob/internal/models/remove"
 	"salvadorsru/bob/internal/models/table"
 	"strings"
@@ -143,6 +144,9 @@ lineLoop:
 			case remove.Key:
 				l.stack.Push(remove.New())
 				parametrising = true
+			case raw.Key:
+				l.stack.Push(raw.New())
+				parametrising = true
 				continue
 			}
 
@@ -167,6 +171,8 @@ lineLoop:
 				}
 			case *remove.Remove:
 				l.ParseRemove(v)
+			case *raw.Raw:
+				l.ParseRaw(v)
 			}
 		}
 	}
