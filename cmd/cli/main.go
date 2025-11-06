@@ -105,6 +105,7 @@ func processCombined(args cli.Args, driver transpiler.Driver, input string, file
 	mustPanicOnError(tablesErr)
 
 	if args.Output == "" {
+		console.Clear()
 		console.Success()
 		console.Log(tables, actions)
 		return
