@@ -107,7 +107,7 @@ func processCombined(args cli.Args, driver transpiler.Driver, input string, file
 	if args.Output == "" {
 		console.Clear()
 		console.Success()
-		console.Log(tables, actions)
+		console.Log(tables, "\n\n", actions)
 		return
 	}
 
