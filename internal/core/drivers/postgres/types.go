@@ -1,4 +1,4 @@
-package postgre
+package postgres
 
 import "salvadorsru/bob/internal/models/table"
 
