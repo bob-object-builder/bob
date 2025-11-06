@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
 	"salvadorsru/bob/internal/models/get"
@@ -65,5 +66,6 @@ func (l *Lexer) ParseGet(g *get.Get) {
 		return
 	}
 
-	g.Selected.Add(l.pill.UseOr(l.token), l.token)
+	selected := formatter.ToSnakeCase(l.token)
+	g.Selected.Add(l.pill.UseOr(selected), selected)
 }
