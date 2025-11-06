@@ -20,26 +20,30 @@ const CommentPrefix = "#"
 const AliasSuffix = ":"
 
 type Lexer struct {
-	stack   Stack[any]
-	tables  object.Object[table.Table]
-	actions array.Array[any]
-	pill    pill.Pill
-	locked  bool
-	jump    bool
-	tokens  []string
-	token   string
+	stack         Stack[any]
+	tables        object.Object[table.Table]
+	actions       array.Array[any]
+	pill          pill.Pill
+	locked        bool
+	jump          bool
+	tokens        []string
+	token         string
+	capturing     bool
+	parametrising bool
 }
 
 func New() *Lexer {
 	return &Lexer{
-		stack:   *NewStack[any](),
-		tables:  *object.New[table.Table](),
-		actions: *array.New[any](),
-		pill:    pill.New(""),
-		locked:  false,
-		jump:    false,
-		tokens:  []string{},
-		token:   "",
+		stack:         *NewStack[any](),
+		tables:        *object.New[table.Table](),
+		actions:       *array.New[any](),
+		pill:          pill.New(""),
+		locked:        false,
+		jump:          false,
+		tokens:        []string{},
+		token:         "",
+		capturing:     false,
+		parametrising: false,
 	}
 }
 
@@ -76,9 +80,6 @@ func (l *Lexer) GetActions() array.Array[any] {
 }
 
 func (l *Lexer) Parse(query string) (error, *object.Object[table.Table], *array.Array[any]) {
-
-	capturing := false
-	parametrising := false
 	lines := utils.SplitByLine(query)
 
 lineLoop:
@@ -95,12 +96,12 @@ lineLoop:
 			}
 
 			if l.IsOpenKey() {
-				parametrising = false
-				capturing = true
+				l.parametrising = false
+				l.capturing = true
 			}
 
 			if l.IsCloseKey() {
-				capturing = false
+				l.capturing = false
 			}
 
 			if l.jump {
@@ -117,7 +118,7 @@ lineLoop:
 				continue
 			}
 
-			if parametrising {
+			if l.parametrising {
 				switch l.token {
 				case table.Key, get.Key, join.LeftJoinKey, insert.Key, remove.Key:
 					return errors.New("malformed query"), nil, nil
@@ -127,26 +128,26 @@ lineLoop:
 			switch token {
 			case table.Key:
 				l.stack.Push(table.New())
-				parametrising = true
+				l.parametrising = true
 				continue
 			case get.Key:
 				l.stack.Push(get.New())
-				parametrising = true
+				l.parametrising = true
 				continue
 			case join.LeftJoinKey:
 				l.stack.Push(join.NewLeftJoin())
-				parametrising = true
+				l.parametrising = true
 				continue
 			case insert.Key:
 				l.stack.Push(insert.New())
-				parametrising = true
+				l.parametrising = true
 				continue
 			case remove.Key:
 				l.stack.Push(remove.New())
-				parametrising = true
+				l.parametrising = true
 			case raw.Key:
 				l.stack.Push(raw.New())
-				parametrising = true
+				l.parametrising = true
 				continue
 			}
 
@@ -177,7 +178,7 @@ lineLoop:
 		}
 	}
 
-	if parametrising || capturing {
+	if l.parametrising || l.capturing {
 		return errors.New("malformed query"), nil, nil
 	}
 
