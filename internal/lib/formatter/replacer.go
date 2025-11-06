@@ -14,7 +14,7 @@ import (
 func PrefixWith(prefix string, target string, reservedKeywords []string) string {
 	reserved := make(map[string]struct{}, len(reservedKeywords))
 	for _, kw := range reservedKeywords {
-		reserved[strings.ToLower(kw)] = struct{}{}
+		reserved[ToSnakeCase(kw)] = struct{}{}
 	}
 
 	var b strings.Builder
@@ -75,10 +75,10 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 			}
 
 			word := target[start:i]
-			lower := strings.ToLower(word)
+			formatted := ToSnakeCase(word)
 
-			if _, ok := reserved[lower]; ok {
-				b.WriteString(word)
+			if _, ok := reserved[formatted]; ok {
+				b.WriteString(formatted)
 				continue
 			}
 
@@ -87,7 +87,7 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 				prev--
 			}
 			if prev >= 0 && target[prev] == '.' {
-				b.WriteString(word)
+				b.WriteString(formatted)
 				continue
 			}
 
@@ -96,12 +96,12 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 				next++
 			}
 			if next < n && target[next] == '.' {
-				b.WriteString(word)
+				b.WriteString(formatted)
 				continue
 			}
 
 			b.WriteString(prefix)
-			b.WriteString(word)
+			b.WriteString(formatted)
 			continue
 		}
 
