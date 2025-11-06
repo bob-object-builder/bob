@@ -16,7 +16,9 @@ func (l *Lexer) ParseRaw(r *raw.Raw) error {
 		return nil
 	}
 
-	r.Lines.Push(strings.Join(l.tokens, " "))
+	if l.capturing {
+		r.Lines.Push(strings.Join(l.tokens, " "))
+	}
 	l.NextLine()
 	return nil
 }
