@@ -57,7 +57,8 @@ func (l *Lexer) ParseGet(g *get.Get) {
 	}
 
 	if function.IsFunction(l.token) {
-		g.Selected.Add(l.pill.UseOr(l.token), l.ParseReferences(g.Target))
+		fn := l.ParseReferences(g.Target)
+		g.Selected.Add(l.pill.UseOr(fn), fn)
 		if len(l.tokens) > 1 {
 			l.NextLine()
 		}
