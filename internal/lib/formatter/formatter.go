@@ -51,7 +51,7 @@ func IndentLines(str string, size ...int) string {
 	return strings.Join(lines, "\n")
 }
 
-func String(s string) string {
+func NormalizeString(s string) string {
 	if s == "" {
 		return s
 	}
