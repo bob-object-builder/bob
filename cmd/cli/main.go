@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"salvadorsru/bob/internal/core/transpiler"
 	"salvadorsru/bob/internal/lib/cli"
@@ -22,31 +23,15 @@ func collectFiles(input string, isFile, isFolder bool) ([]string, error) {
 	return nil, nil
 }
 
-func mustPanicOnError(err error) {
+func mustPanicOnError(asJson bool, err error) {
 	if err != nil {
+		if asJson {
+			data := map[string]string{"error": err.Error()}
+			jsonBytes, _ := json.MarshalIndent(data, "", "  ")
+			console.Log(string(jsonBytes))
+			os.Exit(1)
+		}
 		console.Panic(err.Error())
-	}
-}
-
-func main() {
-	console.Clear()
-	argsErr, args := cli.ProcessArgs(version)
-	mustPanicOnError(argsErr)
-
-	if args.Driver == "" {
-		console.Panic("driver not specified")
-	}
-	if args.OutputIsFile {
-		console.Panic("output must be a folder")
-	}
-
-	driverErr, driver := transpiler.GetDriver(args.Driver)
-	mustPanicOnError(driverErr)
-
-	if args.Query != "" {
-		handleDirectQuery(*args, driver)
-	} else {
-		handleInputFiles(*args, driver)
 	}
 }
 
@@ -57,7 +42,7 @@ func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpi
 			"actions": actions.Get(),
 		}
 		jsonBytes, err := json.MarshalIndent(data, "", "  ")
-		mustPanicOnError(err)
+		mustPanicOnError(asJson, err)
 		console.Log(string(jsonBytes))
 	} else {
 		console.Success()
@@ -65,9 +50,31 @@ func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpi
 	}
 }
 
+func main() {
+	console.Clear()
+	argsErr, args := cli.ProcessArgs(version)
+	mustPanicOnError(args.AsJson, argsErr)
+
+	if args.Driver == "" {
+		console.Panic("driver not specified")
+	}
+	if args.OutputIsFile {
+		console.Panic("output must be a folder")
+	}
+
+	driverErr, driver := transpiler.GetDriver(args.Driver)
+	mustPanicOnError(args.AsJson, driverErr)
+
+	if args.Query != "" {
+		handleDirectQuery(*args, driver)
+	} else {
+		handleInputFiles(*args, driver)
+	}
+}
+
 func handleDirectQuery(args cli.Args, driver transpiler.Driver) {
 	transpileErr, tables, actions := transpiler.Transpile(driver, args.Query)
-	mustPanicOnError(transpileErr)
+	mustPanicOnError(args.AsJson, transpileErr)
 
 	if args.Output == "" {
 		printResult(args.AsJson, *tables, *actions)
@@ -88,7 +95,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 	}
 
 	filesList, err := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
-	mustPanicOnError(err)
+	mustPanicOnError(args.AsJson, err)
 
 	results := file.ReadFiles(filesList)
 	var combinedInput strings.Builder
@@ -101,7 +108,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 		}
 
 		actionErr, _, action := transpiler.Transpile(driver, res.Content)
-		mustPanicOnError(actionErr)
+		mustPanicOnError(args.AsJson, actionErr)
 
 		if args.Output != "" {
 			fileName := strings.TrimSuffix(filepath.Base(res.Ref), ".bob") + ".sql"
@@ -117,7 +124,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 
 func processCombined(args cli.Args, driver transpiler.Driver, input string, files []file.File) {
 	transpileErr, tables, actions := transpiler.Transpile(driver, input)
-	mustPanicOnError(transpileErr)
+	mustPanicOnError(args.AsJson, transpileErr)
 
 	if args.Output == "" {
 		printResult(args.AsJson, *tables, *actions)
