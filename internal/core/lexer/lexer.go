@@ -163,7 +163,9 @@ lineLoop:
 					return err, nil, nil
 				}
 			case *get.Get:
-				l.ParseGet(v)
+				if err := l.ParseGet(v); err != nil {
+					return err, nil, nil
+				}
 			case *join.Join:
 				l.ParseLeftJoin(v)
 			case *insert.Insert:

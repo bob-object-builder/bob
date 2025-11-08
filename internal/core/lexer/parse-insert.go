@@ -25,7 +25,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) error {
 	}
 
 	if i.IsTargetEmpty() {
-		i.SetTarget(l.token)
+		i.SetTarget(formatter.ToSnakeCase(l.token))
 		return nil
 	}
 
@@ -52,7 +52,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) error {
 				parsingString = false
 				joined := strings.Join(*buffer, " ")
 				buffer.Clean()
-				values.Push(formatter.String(joined))
+				values.Push(formatter.NormalizeString(joined))
 			}
 			continue
 		}

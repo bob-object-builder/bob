@@ -1,18 +1,19 @@
 package lexer
 
 import (
-	"salvadorsru/bob/internal/lib/formatter"
+	"errors"
+	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
 	"salvadorsru/bob/internal/models/get"
 )
 
-func (l *Lexer) ParseGet(g *get.Get) {
+func (l *Lexer) ParseGet(g *get.Get) error {
 	isVoidContext := l.IsVoidContext()
 
 	if l.IsOpenKey() && !isVoidContext {
 		g.Alias = l.pill.UseOr(g.Target)
-		return
+		return nil
 	}
 
 	if l.IsCloseKey() || isVoidContext {
@@ -24,17 +25,37 @@ func (l *Lexer) ParseGet(g *get.Get) {
 				previousGet.Subqueries.Push(*g)
 			}
 
-			return
+			return nil
 		}
 
 		l.actions.Push(*g)
 		l.stack.Clean()
-		return
+		return nil
 	}
 
 	if !g.HasTarget() {
 		g.SetTarget(l.token)
-		return
+		return nil
+	}
+
+	if get.IsLimit(l.token) {
+		limitValue := l.tokens[1]
+
+		if !checker.IsInt(limitValue) {
+			return errors.New("limit value must be a integer")
+		}
+
+		if len(l.tokens) > 2 && get.IsOffset(l.tokens[2]) {
+			offsetValue := l.tokens[2]
+			if !checker.IsInt(offsetValue) {
+				return errors.New("offset value must be a integer")
+			}
+			g.Offset = offsetValue
+		}
+
+		g.Limit = limitValue
+		l.NextLine()
+		return nil
 	}
 
 	if condition.IsCondition(l.token) {
@@ -45,7 +66,7 @@ func (l *Lexer) ParseGet(g *get.Get) {
 			g.Having.Push(cond)
 		}
 		l.NextLine()
-		return
+		return nil
 	}
 
 	if get.IsGroup(l.token) {
@@ -54,7 +75,7 @@ func (l *Lexer) ParseGet(g *get.Get) {
 			g.Groups.Push(l.ParseReferences(g.Target))
 		}
 		l.NextLine()
-		return
+		return nil
 	}
 
 	if function.IsFunction(l.token) {
@@ -63,9 +84,10 @@ func (l *Lexer) ParseGet(g *get.Get) {
 		if len(l.tokens) > 1 {
 			l.NextLine()
 		}
-		return
+		return nil
 	}
 
-	selected := formatter.ToSnakeCase(l.token)
+	selected := l.token
 	g.Selected.Add(l.pill.UseOr(selected), selected)
+	return nil
 }

@@ -31,7 +31,7 @@ func (l *Lexer) ParseCondition(target string) condition.Condition {
 	)
 
 	prefix := func(str string) string {
-		return strings.ToLower(function.PrefixParameters(fmt.Sprintf("%s.", target), str))
+		return function.PrefixParameters(fmt.Sprintf("%s.", target), str)
 	}
 
 	push := func(str string) {
@@ -53,7 +53,7 @@ func (l *Lexer) ParseCondition(target string) condition.Condition {
 				parsingString = false
 				fullString := strings.Join(*buffer, " ")
 				buffer.Clean()
-				push(formatter.String(fullString))
+				push(formatter.NormalizeString(fullString))
 			}
 
 		case function.IsFunctionStart(token):
