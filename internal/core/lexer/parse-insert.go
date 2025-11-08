@@ -30,7 +30,11 @@ func (l *Lexer) ParseInsert(i *insert.Insert) error {
 	}
 
 	if !i.Capturing {
-		i.AddColumn(l.token)
+		if strings.Contains(l.token, ".") {
+			i.AddColumn(formatter.ToSnakeCase(l.token))
+		} else {
+			i.AddColumn(l.token)
+		}
 		return nil
 	}
 
