@@ -14,7 +14,7 @@ const EveryField = "*"
 const SpreadEveryField = "..."
 
 func (t Transpiler) TranspileGet(g get.Get) string {
-	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s;"
+	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s;"
 
 	fields := t.transpileFields(g)
 	joins, conditions, groups, having := t.collectJoinsAndConditionsAndHaving(g)
@@ -40,7 +40,27 @@ func (t Transpiler) TranspileGet(g get.Get) string {
 		havingString = "\nHAVING\n" + t.TranspileConditions(*having)
 	}
 
-	return fmt.Sprintf(queryTemplate, selectedString, g.Target, joinString, conditionString, groupString, havingString)
+	limitString := ""
+	if g.Limit != "" {
+		limitString = "\nLIMIT " + g.Limit
+	}
+
+	offsetString := ""
+	if g.Offset != "" {
+		offsetString = "\nOFFSET " + g.Offset
+	}
+
+	return fmt.Sprintf(
+		queryTemplate,
+		selectedString,
+		g.Target,
+		joinString,
+		conditionString,
+		groupString,
+		havingString,
+		limitString,
+		offsetString,
+	)
 }
 
 func (t Transpiler) transpileFields(g get.Get) *array.Array[string] {

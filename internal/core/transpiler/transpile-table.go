@@ -122,7 +122,7 @@ func (t *Transpiler) TranspileTable(tb table.Table) (error, array.Array[string])
 	}
 
 	output.Push(fmt.Sprintf(
-		"CREATE TABLE %s (\n%s\n);",
+		"CREATE TABLE IF NOT EXISTS %s (\n%s\n);",
 		tableName,
 		strings.Join(*columns, ",\n"),
 	))

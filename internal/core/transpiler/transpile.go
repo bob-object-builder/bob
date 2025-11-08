@@ -4,12 +4,12 @@ import (
 	"salvadorsru/bob/internal/core/lexer"
 )
 
-func Transpile(driver Driver, query string) (error, string, string) {
+func Transpile(driver Driver, query string) (error, *TranspiledTable, *TranspiledActions) {
 	l := lexer.New()
 	parseError, tables, actions := l.Parse(query)
 
 	if parseError != nil {
-		return parseError, "", ""
+		return parseError, nil, nil
 	}
 
 	t := Transpiler{
@@ -20,7 +20,7 @@ func Transpile(driver Driver, query string) (error, string, string) {
 
 	trampileError, transpiledTables, transpiledActions := t.Transpile()
 	if trampileError != nil {
-		return trampileError, "", ""
+		return trampileError, nil, nil
 	}
 
 	return nil, transpiledTables, transpiledActions
