@@ -16,10 +16,15 @@ type Args struct {
 	OutputIsFolder bool
 	OutputIsFile   bool
 	Output         string
+	AsJson         bool
 }
 
 func ProcessArgs(version string) (error, *Args) {
 	var args Args
+
+	existsFlag := func(arg string, flag string) bool {
+		return arg == flag
+	}
 
 	for i, arg := range os.Args {
 		if arg == "-v" || arg == "--version" {
@@ -86,6 +91,10 @@ func ProcessArgs(version string) (error, *Args) {
 			}
 
 			args.Output = val
+		}
+
+		if ok := existsFlag(arg, "--json"); ok {
+			args.AsJson = true
 		}
 	}
 
