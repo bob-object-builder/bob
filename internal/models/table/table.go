@@ -34,7 +34,7 @@ func (t *Table) IsNameEmpty() bool {
 
 func (t *Table) AddColumn(name string, kind string, properties []string) error {
 	column := Column{
-		name:          formatter.ToSnakeCase(name),
+		name:          name,
 		Type:          "",
 		Default:       "",
 		Index:         false,
@@ -77,7 +77,7 @@ func (t *Table) AddColumn(name string, kind string, properties []string) error {
 			continue
 		default:
 			if hasDefaultValue {
-				column.Default = formatter.String(strings.Join(properties[i:], " "))
+				column.Default = formatter.NormalizeString(strings.Join(properties[i:], " "))
 			} else {
 				return fmt.Errorf("invalid property '%s'", token)
 			}

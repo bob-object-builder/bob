@@ -1,7 +1,6 @@
 package insert
 
 import (
-	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 )
 
@@ -24,9 +23,9 @@ func (i *Insert) IsTargetEmpty() bool {
 }
 
 func (i *Insert) SetTarget(target string) {
-	i.Target = formatter.ToSnakeCase(target)
+	i.Target = target
 }
 
 func (i *Insert) AddColumn(column string) {
-	i.Columns.Push(formatter.ToSnakeCase(column))
+	i.Columns.Push(column)
 }
