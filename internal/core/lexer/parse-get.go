@@ -46,7 +46,7 @@ func (l *Lexer) ParseGet(g *get.Get) error {
 		}
 
 		if len(l.tokens) > 2 && get.IsOffset(l.tokens[2]) {
-			offsetValue := l.tokens[2]
+			offsetValue := l.tokens[3]
 			if !checker.IsInt(offsetValue) {
 				return errors.New("offset value must be a integer")
 			}
