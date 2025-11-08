@@ -10,6 +10,8 @@ import (
 
 const Key = "get"
 const GroupKey = "group"
+const LimitKey = "limit"
+const OffsetKey = "offset"
 
 type Get struct {
 	Target     string
@@ -20,6 +22,8 @@ type Get struct {
 	Subqueries array.Array[Get]
 	Joins      array.Array[join.Join]
 	Groups     array.Array[string]
+	Limit      string
+	Offset     string
 }
 
 func New(alias ...string) *Get {
@@ -42,4 +46,12 @@ func (g *Get) SetTarget(target string) {
 
 func IsGroup(key string) bool {
 	return key == GroupKey
+}
+
+func IsLimit(key string) bool {
+	return key == LimitKey
+}
+
+func IsOffset(key string) bool {
+	return key == OffsetKey
 }
