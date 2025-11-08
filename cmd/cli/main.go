@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"salvadorsru/bob/internal/core/transpiler"
 	"salvadorsru/bob/internal/lib/cli"
@@ -28,6 +29,7 @@ func mustPanicOnError(err error) {
 }
 
 func main() {
+	console.Clear()
 	argsErr, args := cli.ProcessArgs(version)
 	mustPanicOnError(argsErr)
 
@@ -48,20 +50,36 @@ func main() {
 	}
 }
 
+func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpiler.TranspiledActions) {
+	if asJson {
+		data := map[string]any{
+			"tables":  tables.Get(),
+			"actions": actions.Get(),
+		}
+		jsonBytes, err := json.MarshalIndent(data, "", "  ")
+		mustPanicOnError(err)
+		console.Log(string(jsonBytes))
+	} else {
+		console.Success()
+		console.Log(tables.ToString(), "\n\n", actions.ToString())
+	}
+}
+
 func handleDirectQuery(args cli.Args, driver transpiler.Driver) {
 	transpileErr, tables, actions := transpiler.Transpile(driver, args.Query)
 	mustPanicOnError(transpileErr)
 
 	if args.Output == "" {
-		console.Success()
-		console.Log(tables, actions)
+		printResult(args.AsJson, *tables, *actions)
 		return
 	}
 
-	file.WriteFiles([]file.File{
-		{Ref: "actions.sql", Content: actions},
-		{Ref: "tables.sql", Content: tables},
-	}, args.Output, args.OutputIsFolder)
+	files := []file.File{
+		{Ref: "actions.sql", Content: actions.ToString()},
+		{Ref: "tables.sql", Content: tables.ToString()},
+	}
+	file.WriteFiles(files, args.Output, args.OutputIsFolder)
+	console.Success("transpiled to " + args.Output)
 }
 
 func handleInputFiles(args cli.Args, driver transpiler.Driver) {
@@ -69,15 +87,12 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 		console.Panic("invalid empty input")
 	}
 
-	files, err := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
+	filesList, err := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
 	mustPanicOnError(err)
 
-	results := file.ReadFiles(files)
-
-	var (
-		combinedInput strings.Builder
-		outputFiles   []file.File
-	)
+	results := file.ReadFiles(filesList)
+	var combinedInput strings.Builder
+	var outputFiles []file.File
 
 	for _, res := range results {
 		if res.Err != nil {
@@ -90,7 +105,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 
 		if args.Output != "" {
 			fileName := strings.TrimSuffix(filepath.Base(res.Ref), ".bob") + ".sql"
-			outputFiles = append(outputFiles, file.File{Ref: fileName, Content: action})
+			outputFiles = append(outputFiles, file.File{Ref: fileName, Content: action.ToString()})
 		}
 
 		combinedInput.WriteString(res.Content)
@@ -101,17 +116,15 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 }
 
 func processCombined(args cli.Args, driver transpiler.Driver, input string, files []file.File) {
-	tablesErr, tables, actions := transpiler.Transpile(driver, input)
-	mustPanicOnError(tablesErr)
+	transpileErr, tables, actions := transpiler.Transpile(driver, input)
+	mustPanicOnError(transpileErr)
 
 	if args.Output == "" {
-		console.Clear()
-		console.Success()
-		console.Log(tables, "\n\n", actions)
+		printResult(args.AsJson, *tables, *actions)
 		return
 	}
 
-	files = append(files, file.File{Ref: "tables.sql", Content: tables})
+	files = append(files, file.File{Ref: "tables.sql", Content: tables.ToString()})
 	file.WriteFiles(files, args.Output, args.OutputIsFolder)
 	console.Success("transpiled to " + args.Output)
 }
