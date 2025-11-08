@@ -39,21 +39,26 @@ func (l *Lexer) ParseGet(g *get.Get) error {
 	}
 
 	if get.IsLimit(l.token) {
-		limitValue := l.tokens[1]
+		tokens := l.tokens
 
-		if !checker.IsInt(limitValue) {
-			return errors.New("limit value must be a integer")
+		if len(tokens) < 2 {
+			return errors.New("limit value is required")
 		}
 
-		if len(l.tokens) > 2 && get.IsOffset(l.tokens[2]) {
-			offsetValue := l.tokens[3]
+		limitValue := tokens[1]
+		if !checker.IsInt(limitValue) {
+			return errors.New("limit value must be an integer")
+		}
+		g.Limit = limitValue
+
+		if len(tokens) >= 4 && get.IsOffset(tokens[2]) {
+			offsetValue := tokens[3]
 			if !checker.IsInt(offsetValue) {
-				return errors.New("offset value must be a integer")
+				return errors.New("offset value must be an integer")
 			}
 			g.Offset = offsetValue
 		}
 
-		g.Limit = limitValue
 		l.NextLine()
 		return nil
 	}
