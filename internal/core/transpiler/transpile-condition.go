@@ -29,6 +29,10 @@ func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], 
 			return fmt.Errorf("malformed condition %s", c.Target), ""
 		}
 
+		if c.And.Length() == 0 && c.Else.Length() == 0 {
+			return fmt.Errorf("validation failed for table '%s' target '%s' condition cannot be empty", c.Table, c.Target), ""
+		}
+
 		var operation string
 		if strings.Contains(c.Target, ".") {
 			operation = fmt.Sprintf("%s %s", c.Target, c.Comparator)
