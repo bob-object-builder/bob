@@ -34,7 +34,7 @@ func (t *Table) IsNameEmpty() bool {
 
 func (t *Table) AddColumn(name string, kind string, properties []string) error {
 	column := Column{
-		name:          name,
+		Name:          name,
 		Type:          "",
 		Default:       "",
 		Index:         false,
@@ -56,6 +56,10 @@ func (t *Table) AddColumn(name string, kind string, properties []string) error {
 	if typeValue == IdType {
 		column.Primary = true
 		column.AutoIncrement = true
+	}
+
+	if typeValue == CurrentType {
+		column.Default = "CURRENT_TIMESTAMP"
 	}
 
 	for i, token := range properties {
