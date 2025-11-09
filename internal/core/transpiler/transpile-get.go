@@ -13,8 +13,12 @@ import (
 const EveryField = "*"
 const SpreadEveryField = "..."
 
-func (t Transpiler) TranspileGet(g get.Get) (error, string) {
-	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s;"
+func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (error, string) {
+	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s"
+
+	if !isSubquery {
+		queryTemplate += ";"
+	}
 
 	fieldsError, fields := t.transpileFields(g)
 	if fieldsError != nil {
@@ -95,7 +99,7 @@ func (t Transpiler) transpileFields(g get.Get) (error, *array.Array[string]) {
 	}
 
 	for _, sub := range g.Subqueries {
-		err, sql := t.TranspileGet(sub)
+		err, sql := t.TranspileGet(sub, true)
 		if err != nil {
 			return err, nil
 		}

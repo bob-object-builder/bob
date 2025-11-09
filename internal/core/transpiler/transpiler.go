@@ -53,7 +53,7 @@ func (t Transpiler) TranspileActions() (error, *TranspiledActions) {
 	for _, action := range t.Actions {
 		switch a := action.(type) {
 		case get.Get:
-			error, transpiled := t.TranspileGet(a)
+			error, transpiled := t.TranspileGet(a, false)
 			if error != nil {
 				return error, nil
 			}
