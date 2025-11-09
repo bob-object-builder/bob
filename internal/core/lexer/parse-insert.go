@@ -1,15 +1,15 @@
 package lexer
 
 import (
-	"fmt"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/insert"
 	"strings"
 )
 
-func (l *Lexer) ParseInsert(i *insert.Insert) error {
+func (l *Lexer) ParseInsert(i *insert.Insert) *failure.Failure {
 	if l.IsOpenKey() {
 		if i.Columns.Length() > 0 {
 			i.IsBulk = true
@@ -66,7 +66,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) error {
 
 	if i.IsBulk {
 		if i.Columns.Length() != values.Length() {
-			return fmt.Errorf("column '%s' is not receiving a value at [%s]", *i.Columns.GetLast(), strings.Join(l.tokens, ", "))
+			return failure.ColumnNotReceivingValue(*i.Columns.GetLast(), strings.Join(l.tokens, ", "))
 		}
 
 		i.Values.Push(*values)

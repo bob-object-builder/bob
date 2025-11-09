@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/table"
@@ -12,7 +13,7 @@ func TranspileIndex(table, column string) string {
 	return fmt.Sprintf("CREATE INDEX idx_%s_%s ON %s(%s);", table, column, table, column)
 }
 
-func (t Transpiler) TranspileReference(ref table.Reference) (*table.Column, string, error) {
+func (t Transpiler) TranspileReference(ref table.Reference) (*failure.Failure, *table.Column, string) {
 	referencedTable := ref.Table
 	referencedColumn := ref.Column
 	columnName := fmt.Sprintf("%s_%s", referencedTable, referencedColumn)
@@ -20,12 +21,12 @@ func (t Transpiler) TranspileReference(ref table.Reference) (*table.Column, stri
 
 	tb := t.Tables.Get(referencedTable)
 	if tb == nil {
-		return nil, "", fmt.Errorf("undefined reference table '%s'", referencedTable)
+		return failure.UndefinedReferenceTable(referencedTable), nil, ""
 	}
 
 	col := tb.Columns.Get(referencedColumn)
 	if col == nil {
-		return nil, "", fmt.Errorf("undefined referenced column: '%s' in table '%s'", referencedColumn, referencedTable)
+		return failure.UndefinedReferencedColumn(referencedColumn, referencedTable), nil, ""
 	}
 
 	column := table.Column{
@@ -48,17 +49,17 @@ func (t Transpiler) TranspileReference(ref table.Reference) (*table.Column, stri
 		foreignKey += "\n" + formatter.IndentLines(strings.Join(*onUpdate, "\n"), 2)
 	}
 
-	return &column, foreignKey, nil
+	return nil, &column, foreignKey
 }
 
-func (t *Transpiler) TranspileColumn(col table.Column) (string, error) {
+func (t *Transpiler) TranspileColumn(col table.Column) (*failure.Failure, string) {
 	if col.Type == "" {
-		return "", fmt.Errorf("undefined type for column: %s", col.GetName())
+		return failure.UndefinedTypeForColumn(col.GetName()), ""
 	}
 
-	dbType, err := t.GetType(col.Type)
-	if err != nil {
-		return "", err
+	typeError, dbType := t.GetType(col.Type)
+	if typeError != nil {
+		return typeError, ""
 	}
 
 	query := fmt.Sprintf("%s %s", col.GetName(), dbType)
@@ -84,10 +85,10 @@ func (t *Transpiler) TranspileColumn(col table.Column) (string, error) {
 		query += fmt.Sprintf(" DEFAULT %s", col.Default)
 	}
 
-	return query, nil
+	return nil, query
 }
 
-func (t *Transpiler) TranspileTable(tb table.Table) (error, array.Array[string]) {
+func (t *Transpiler) TranspileTable(tb table.Table) (*failure.Failure, array.Array[string]) {
 	var (
 		columns = array.New[string]()
 		indexes = array.New[string]()
@@ -109,21 +110,21 @@ func (t *Transpiler) TranspileTable(tb table.Table) (error, array.Array[string])
 			uniques.Push(colName)
 		}
 
-		colSQL, err := t.TranspileColumn(col)
-		if err != nil {
-			return err, nil
+		columnError, colSQL := t.TranspileColumn(col)
+		if columnError != nil {
+			return columnError, nil
 		}
 
 		columns.Push(formatter.Indent(colSQL))
 	}
 
 	for _, ref := range tb.References {
-		colRef, fkDef, err := t.TranspileReference(ref)
+		err, colRef, fkDef := t.TranspileReference(ref)
 		if err != nil {
 			return err, nil
 		}
 
-		colSQL, err := t.TranspileColumn(*colRef)
+		err, colSQL := t.TranspileColumn(*colRef)
 		if err != nil {
 			return err, nil
 		}

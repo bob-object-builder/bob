@@ -1,7 +1,7 @@
 package table
 
 import (
-	"fmt"
+	"salvadorsru/bob/internal/lib/failure"
 )
 
 type Type string
@@ -69,11 +69,11 @@ var typeMap = TypesMap{
 	"timestamp": "timestamp",
 }
 
-func (t TypesMap) GetType(token Type) (Type, error) {
+func (t TypesMap) GetType(token Type) (*failure.Failure, Type) {
 	if typ, ok := t[token]; ok {
-		return typ, nil
+		return nil, typ
 	}
-	return "", fmt.Errorf("invalid type %q", token)
+	return failure.UndefinedTypeForColumn(string(token)), ""
 }
 
 func IsType(token string) bool {

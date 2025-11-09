@@ -2,13 +2,14 @@ package transpiler
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/condition"
 	"strings"
 )
 
-func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], isGrouped bool) (error, string) {
+func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], isGrouped bool) (*failure.Failure, string) {
 	if len(conds) == 0 {
 		return nil, ""
 	}
@@ -26,11 +27,11 @@ func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], 
 		}
 
 		if c.Comparator == "" {
-			return fmt.Errorf("malformed condition %s", c.Target), ""
+			return failure.MalformedCondition(c.Target), ""
 		}
 
 		if c.And.Length() == 0 && c.Else.Length() == 0 {
-			return fmt.Errorf("validation failed for table '%s' target '%s' condition cannot be empty", c.Table, c.Target), ""
+			return failure.ConditionValidation(c.Table, c.Target), ""
 		}
 
 		var operation string

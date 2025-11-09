@@ -1,10 +1,10 @@
 package transpiler
 
 import (
-	"fmt"
 	"salvadorsru/bob/internal/core/drivers/mariadb"
 	"salvadorsru/bob/internal/core/drivers/postgres"
 	"salvadorsru/bob/internal/core/drivers/sqlite"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/models/table"
 )
 
@@ -17,7 +17,7 @@ const (
 	MySQL    Driver = "mysql"
 )
 
-func GetDriver(driver string) (error, Driver) {
+func GetDriver(driver string) (*failure.Failure, Driver) {
 	switch Driver(driver) {
 	case SQLite:
 		return nil, SQLite
@@ -28,7 +28,7 @@ func GetDriver(driver string) (error, Driver) {
 	case MySQL:
 		return nil, MySQL
 	default:
-		return fmt.Errorf("unknown driver: %s", driver), ""
+		return failure.UnknownDriver(driver), ""
 	}
 }
 
@@ -36,7 +36,7 @@ func (t *Transpiler) SetDriver(driver Driver) {
 	t.SelectedDriver = driver
 }
 
-func (t *Transpiler) GetType(token table.Type) (table.Type, error) {
+func (t *Transpiler) GetType(token table.Type) (*failure.Failure, table.Type) {
 	switch t.SelectedDriver {
 	case SQLite:
 		return sqlite.Types.GetType(token)

@@ -1,7 +1,7 @@
 package table
 
 import (
-	"fmt"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"strings"
 )
@@ -21,7 +21,7 @@ type Reference struct {
 	Default         string
 }
 
-func (t *Table) AddReference(table string, column string, properties []string) error {
+func (t *Table) AddReference(table string, column string, properties []string) *failure.Failure {
 	ref := Reference{
 		Table:           formatter.ToSnakeCase(table),
 		Column:          formatter.ToSnakeCase(column),
@@ -53,7 +53,7 @@ func (t *Table) AddReference(table string, column string, properties []string) e
 			if hasDefaultValue {
 				ref.Default = formatter.NormalizeString(strings.Join(properties[i:], " "))
 			} else {
-				return fmt.Errorf("invalid property '%s'", token)
+				return failure.InvalidProperty(token)
 			}
 		}
 	}

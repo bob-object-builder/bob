@@ -4,23 +4,21 @@ import (
 	"salvadorsru/bob/internal/models/drop"
 )
 
-func (l *Lexer) ParseDrop(d *drop.Drop) error {
+func (l *Lexer) ParseDrop(d *drop.Drop) {
 	isVoidContext := l.IsVoidContext()
 
 	if l.IsOpenKey() && !isVoidContext {
-		return nil
+		return
 	}
 
 	if l.IsCloseKey() || l.IsVoidContext() {
 		l.actions.Push(*d)
 		l.stack.Clean()
-		return nil
+		return
 	}
 
 	if !d.HasTarget() {
 		d.SetTarget(l.token)
-		return nil
+		return
 	}
-
-	return nil
 }

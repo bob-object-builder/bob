@@ -1,9 +1,8 @@
 package lexer
 
 import (
-	"errors"
-	"fmt"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
@@ -11,7 +10,7 @@ import (
 	"strings"
 )
 
-func (l *Lexer) ParseGet(g *get.Get) error {
+func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 	isVoidContext := l.IsVoidContext()
 
 	if l.IsOpenKey() && !isVoidContext {
@@ -45,19 +44,19 @@ func (l *Lexer) ParseGet(g *get.Get) error {
 		tokens := l.tokens
 
 		if len(tokens) < 2 {
-			return errors.New("limit value is required")
+			return failure.LimitValueRequired
 		}
 
 		limitValue := tokens[1]
 		if !checker.IsInt(limitValue) {
-			return errors.New("limit value must be an integer")
+			return failure.LimitValueMustBeInteger
 		}
 		g.Limit = limitValue
 
 		if len(tokens) >= 4 && get.IsOffset(tokens[2]) {
 			offsetValue := tokens[3]
 			if !checker.IsInt(offsetValue) {
-				return errors.New("offset value must be an integer")
+				return failure.OffsetValueMustBeInteger
 			}
 			g.Offset = offsetValue
 		}
@@ -102,7 +101,7 @@ func (l *Lexer) ParseGet(g *get.Get) error {
 	}
 
 	if !checker.IsWord(selected) {
-		return fmt.Errorf("invalid selected column '%s'", selected)
+		return failure.InvalidSelectedColumn(selected)
 	}
 
 	g.Selected.Add(l.pill.UseOr(selected), selected)

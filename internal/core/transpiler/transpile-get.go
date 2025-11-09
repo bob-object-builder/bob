@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/condition"
@@ -13,7 +14,7 @@ import (
 const EveryField = "*"
 const SpreadEveryField = "..."
 
-func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (error, string) {
+func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, string) {
 	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s"
 
 	if !isSubquery {
@@ -34,7 +35,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (error, string) {
 
 	conditionString := ""
 	if len(*conditions) > 0 {
-		var conditionEerror error
+		var conditionEerror *failure.Failure
 		conditionEerror, conditionString = t.TranspileConditions(*conditions, false)
 		if conditionEerror != nil {
 			return conditionEerror, ""
@@ -48,7 +49,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (error, string) {
 
 	havingString := ""
 	if len(*having) > 0 {
-		var conditionEerror error
+		var conditionEerror *failure.Failure
 		conditionEerror, havingString = t.TranspileConditions(*having, true)
 		if conditionEerror != nil {
 			return conditionEerror, ""
@@ -78,7 +79,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (error, string) {
 	)
 }
 
-func (t Transpiler) transpileFields(g get.Get) (error, *array.Array[string]) {
+func (t Transpiler) transpileFields(g get.Get) (*failure.Failure, *array.Array[string]) {
 	fields := array.New[string]()
 
 	for field := range g.Selected.Range() {

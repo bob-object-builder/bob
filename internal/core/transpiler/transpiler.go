@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/models/drop"
@@ -19,7 +20,7 @@ type Transpiler struct {
 
 type transpileMode string
 
-func (t Transpiler) Transpile() (error, *TranspiledTable, *TranspiledActions) {
+func (t Transpiler) Transpile() (*failure.Failure, *TranspiledTable, *TranspiledActions) {
 	tablesError, tables := t.TranspileTables()
 	if tablesError != nil {
 		return tablesError, nil, nil
@@ -33,7 +34,7 @@ func (t Transpiler) Transpile() (error, *TranspiledTable, *TranspiledActions) {
 	return nil, tables, actions
 }
 
-func (t Transpiler) TranspileTables() (error, *TranspiledTable) {
+func (t Transpiler) TranspileTables() (*failure.Failure, *TranspiledTable) {
 	tables := TranspiledTable{}
 
 	for table := range t.Tables.Range() {
@@ -47,7 +48,7 @@ func (t Transpiler) TranspileTables() (error, *TranspiledTable) {
 	return nil, &tables
 }
 
-func (t Transpiler) TranspileActions() (error, *TranspiledActions) {
+func (t Transpiler) TranspileActions() (*failure.Failure, *TranspiledActions) {
 	actions := TranspiledActions{}
 
 	for _, action := range t.Actions {

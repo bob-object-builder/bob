@@ -2,23 +2,24 @@ package transpiler
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/remove"
 )
 
-func (t Transpiler) TranspileRemove(r remove.Remove) (error, string) {
+func (t Transpiler) TranspileRemove(r remove.Remove) (*failure.Failure, string) {
 	query := fmt.Sprintf("DELETE FROM \n%s", formatter.Indent(r.Target))
 
 	conditionString := ""
 	if len(r.Conditions) > 0 {
-		var conditionError error
+		var conditionError *failure.Failure
 		conditionError, conditionString = t.TranspileConditions(r.Conditions, false)
 		if conditionError != nil {
 			return conditionError, ""
 		}
 	} else {
 		if !r.RemoveAll {
-			return fmt.Errorf("you must add conditions or use '*' to delete all in '%s'", r.Target), ""
+			return failure.DeleteCondition(r.Target), ""
 		}
 	}
 

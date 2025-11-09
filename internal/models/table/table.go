@@ -1,7 +1,7 @@
 package table
 
 import (
-	"fmt"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
@@ -32,7 +32,7 @@ func (t *Table) IsNameEmpty() bool {
 	return t.name == ""
 }
 
-func (t *Table) AddColumn(name string, kind string, properties []string) error {
+func (t *Table) AddColumn(name string, kind string, properties []string) *failure.Failure {
 	column := Column{
 		Name:          name,
 		Type:          "",
@@ -46,7 +46,7 @@ func (t *Table) AddColumn(name string, kind string, properties []string) error {
 
 	hasDefaultValue := false
 
-	typeValue, typeValueError := typeMap.GetType(Type(kind))
+	typeValueError, typeValue := typeMap.GetType(Type(kind))
 	if typeValueError != nil {
 		return typeValueError
 	}
@@ -83,7 +83,7 @@ func (t *Table) AddColumn(name string, kind string, properties []string) error {
 			if hasDefaultValue {
 				column.Default = formatter.NormalizeString(strings.Join(properties[i:], " "))
 			} else {
-				return fmt.Errorf("invalid property '%s'", token)
+				return failure.InvalidProperty(token)
 			}
 		}
 	}

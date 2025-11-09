@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"errors"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/utils"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
@@ -82,7 +82,7 @@ func (l *Lexer) GetActions() array.Array[any] {
 	return l.actions
 }
 
-func (l *Lexer) Parse(query string) (error, *object.Object[table.Table], *array.Array[any]) {
+func (l *Lexer) Parse(query string) (*failure.Failure, *object.Object[table.Table], *array.Array[any]) {
 	lines := utils.SplitByLine(query)
 
 lineLoop:
@@ -124,7 +124,7 @@ lineLoop:
 			if l.parametrising {
 				switch l.token {
 				case table.Key, get.Key, join.LeftJoinKey, insert.Key, remove.Key:
-					return errors.New("malformed query"), nil, nil
+					return failure.MalformedQuery(""), nil, nil
 				}
 			}
 
@@ -191,7 +191,7 @@ lineLoop:
 	}
 
 	if l.parametrising || l.capturing {
-		return errors.New("malformed query"), nil, nil
+		return failure.MalformedQuery(""), nil, nil
 	}
 
 	tables := l.GetTables()

@@ -5,20 +5,19 @@ import (
 	"strings"
 )
 
-func (l *Lexer) ParseRaw(r *raw.Raw) error {
+func (l *Lexer) ParseRaw(r *raw.Raw) {
 	if l.IsOpenKey() {
-		return nil
+		return
 	}
 
 	if l.IsCloseKey() {
 		l.actions.Push(*r)
 		l.stack.Clean()
-		return nil
+		return
 	}
 
 	if l.capturing {
 		r.Lines.Push(strings.Join(l.tokens, " "))
 	}
 	l.NextLine()
-	return nil
 }

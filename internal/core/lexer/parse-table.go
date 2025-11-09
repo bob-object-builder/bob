@@ -1,12 +1,12 @@
 package lexer
 
 import (
-	"fmt"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/models/table"
 )
 
-func (l *Lexer) ParseTable(t *table.Table) error {
+func (l *Lexer) ParseTable(t *table.Table) *failure.Failure {
 	if l.IsOpenKey() {
 		return nil
 	}
@@ -40,7 +40,7 @@ func (l *Lexer) ParseTable(t *table.Table) error {
 		}
 	} else {
 		if len(l.tokens) < 2 {
-			return fmt.Errorf("undefined token '%s'", l.token)
+			return failure.UndefinedToken(l.token)
 		}
 
 		name, kind, properties := l.token, l.tokens[1], l.tokens[2:]

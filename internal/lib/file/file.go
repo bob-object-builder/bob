@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"salvadorsru/bob/internal/lib/console"
-	"salvadorsru/bob/internal/lib/response"
 	"sync"
 )
 
@@ -17,7 +16,7 @@ type File struct {
 
 func (f *File) ToString() (string, error) {
 	if f.Err != nil {
-		return "", response.Error("reading %s", f.Ref)
+		return "", fmt.Errorf("reading %s", f.Ref)
 	}
 	return f.Content, nil
 }
@@ -26,7 +25,7 @@ func FilesToString(f []File) (string, error) {
 	var content string
 	for _, file := range f {
 		if file.Err != nil {
-			return "", response.Error("reading %s", file.Ref)
+			return "", fmt.Errorf("reading %s", file.Ref)
 		}
 		content += file.Content
 	}
@@ -95,7 +94,7 @@ func WriteFiles(files []File, output string, outputIsFolder bool) {
 	}
 }
 
-func FindBobFiles(directory string) ([]string, error) {
+func FindBobFiles(directory string) (error, []string) {
 	var files []string
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -106,7 +105,7 @@ func FindBobFiles(directory string) ([]string, error) {
 		}
 		return nil
 	})
-	return files, err
+	return err, files
 }
 
 func ReadFiles(fileList []string) []File {
@@ -121,7 +120,7 @@ func ReadFiles(fileList []string) []File {
 			if err != nil {
 				results[idx] = File{
 					Content: "",
-					Err:     response.Error("reading %s", path),
+					Err:     fmt.Errorf("reading %s", path),
 					Ref:     path,
 				}
 				return

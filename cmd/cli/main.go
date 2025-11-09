@@ -7,15 +7,16 @@ import (
 	"salvadorsru/bob/internal/core/transpiler"
 	"salvadorsru/bob/internal/lib/cli"
 	"salvadorsru/bob/internal/lib/console"
+	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/file"
 	"strings"
 )
 
 var version = "v0.1.0"
 
-func collectFiles(input string, isFile, isFolder bool) ([]string, error) {
+func collectFiles(input string, isFile, isFolder bool) (error, []string) {
 	if isFile {
-		return []string{input}, nil
+		return nil, []string{input}
 	}
 	if isFolder {
 		return file.FindBobFiles(input)
@@ -23,7 +24,7 @@ func collectFiles(input string, isFile, isFolder bool) ([]string, error) {
 	return nil, nil
 }
 
-func panic(asJson bool, err error) {
+func panic(asJson bool, err *failure.Failure) {
 	if err != nil {
 		if asJson {
 			data := map[string]string{"error": err.Error()}
@@ -42,7 +43,9 @@ func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpi
 			"actions": actions.Get(),
 		}
 		jsonBytes, err := json.MarshalIndent(data, "", "  ")
-		panic(asJson, err)
+		if err != nil {
+			panic(asJson, failure.JsonParse)
+		}
 		console.Log(string(jsonBytes))
 	} else {
 		console.Success()
@@ -53,7 +56,9 @@ func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpi
 func main() {
 	console.Clear()
 	argsErr, args := cli.ProcessArgs(version)
-	panic(args.AsJson, argsErr)
+	if argsErr != nil {
+		panic(args.AsJson, failure.Args)
+	}
 
 	if args.Driver == "" {
 		console.Panic("driver not specified")
@@ -94,8 +99,10 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 		console.Panic("invalid empty input")
 	}
 
-	filesList, err := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
-	panic(args.AsJson, err)
+	err, filesList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
+	if err != nil {
+		panic(args.AsJson, failure.CollectFiles)
+	}
 
 	results := file.ReadFiles(filesList)
 	var combinedInput strings.Builder
