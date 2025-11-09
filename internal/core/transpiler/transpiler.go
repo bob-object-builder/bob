@@ -3,6 +3,7 @@ package transpiler
 import (
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
+	"salvadorsru/bob/internal/models/drop"
 	"salvadorsru/bob/internal/models/get"
 	"salvadorsru/bob/internal/models/insert"
 	"salvadorsru/bob/internal/models/raw"
@@ -52,13 +53,23 @@ func (t Transpiler) TranspileActions() (error, *TranspiledActions) {
 	for _, action := range t.Actions {
 		switch a := action.(type) {
 		case get.Get:
-			actions.Push(t.TranspileGet(a))
+			error, transpiled := t.TranspileGet(a)
+			if error != nil {
+				return error, nil
+			}
+			actions.Push(transpiled)
 		case insert.Insert:
 			actions.Push(t.TranspileInsert(a))
 		case remove.Remove:
-			actions.Push(t.TranspileRemove(a))
+			error, transpiled := t.TranspileRemove(a)
+			if error != nil {
+				return error, nil
+			}
+			actions.Push(transpiled)
 		case raw.Raw:
 			actions.Push(t.TranspileRaw(a))
+		case drop.Drop:
+			actions.Push(t.TranspileDrop(a))
 		}
 	}
 
