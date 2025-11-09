@@ -13,15 +13,19 @@ import (
 func (l *Lexer) ParseCondition(target string) condition.Condition {
 	tokens := l.tokens
 
+	errorCondition := condition.Condition{
+		Table: target,
+	}
+
 	if len(tokens) == 0 {
-		return condition.Condition{}
+		return errorCondition
 	}
 
 	conditionKey, tokens := tokens[0], tokens[1:]
 
 	newCondition := &condition.Condition{
-		Condition:  condition.ConditionKey(conditionKey),
-		Comparator: "",
+		Table:     target,
+		Condition: condition.ConditionKey(conditionKey),
 	}
 
 	var (
@@ -68,6 +72,9 @@ func (l *Lexer) ParseCondition(target string) condition.Condition {
 			currentList = &newCondition.Else
 
 		case condition.IsComparator(token):
+			if newCondition.Target == "" {
+				return errorCondition
+			}
 			newCondition.Comparator = condition.Comparator(token)
 
 		default:
@@ -76,7 +83,7 @@ func (l *Lexer) ParseCondition(target string) condition.Condition {
 	}
 
 	if newCondition.Comparator == "" {
-		return condition.Condition{}
+		return errorCondition
 	}
 
 	return *newCondition
