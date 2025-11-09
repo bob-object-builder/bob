@@ -27,7 +27,12 @@ func collectFiles(input string, isFile, isFolder bool) (error, []string) {
 func panic(asJson bool, err *failure.Failure) {
 	if err != nil {
 		if asJson {
-			data := map[string]string{"error": err.Error()}
+			data := map[string]map[string]string{
+				"error": {
+					"name":  err.Name,
+					"value": err.Error(),
+				},
+			}
 			jsonBytes, _ := json.MarshalIndent(data, "", "  ")
 			console.Log(string(jsonBytes))
 			os.Exit(1)
