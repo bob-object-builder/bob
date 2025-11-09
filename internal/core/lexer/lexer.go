@@ -69,7 +69,9 @@ func (l *Lexer) IsCloseKey() bool {
 }
 
 func (l *Lexer) IsVoidContext() bool {
-	return l.token == string(OpenKey)+string(CloseKey)
+	hasOpenKey := strings.HasPrefix(l.token, string(OpenKey))
+	hasCloseKey := strings.HasSuffix(l.token, string(CloseKey))
+	return hasOpenKey && hasCloseKey
 }
 
 func (l *Lexer) GetTables() object.Object[table.Table] {
@@ -146,6 +148,7 @@ lineLoop:
 			case remove.Key:
 				l.stack.Push(remove.New())
 				l.parametrising = true
+				continue
 			case raw.Key:
 				l.stack.Push(raw.New())
 				l.parametrising = true
