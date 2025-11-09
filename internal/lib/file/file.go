@@ -90,7 +90,7 @@ func WriteFiles(files []File, output string, outputIsFolder bool) {
 
 	for err := range errCh {
 		if err != nil {
-			console.Log("Error:", err)
+			console.Log("error:", err)
 		}
 	}
 }
