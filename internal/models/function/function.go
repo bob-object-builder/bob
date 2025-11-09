@@ -33,6 +33,7 @@ func IsFunction(s string) bool {
 	s = strings.TrimSuffix(s, "(")
 	s = strings.ToLower(s)
 	for _, f := range []string{
+		string(openKey),
 		string(avgKey), string(sumKey), string(minKey),
 		string(maxKey), string(countKey), string(concatKey),
 	} {
