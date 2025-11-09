@@ -23,7 +23,7 @@ func collectFiles(input string, isFile, isFolder bool) ([]string, error) {
 	return nil, nil
 }
 
-func mustPanicOnError(asJson bool, err error) {
+func panic(asJson bool, err error) {
 	if err != nil {
 		if asJson {
 			data := map[string]string{"error": err.Error()}
@@ -42,7 +42,7 @@ func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpi
 			"actions": actions.Get(),
 		}
 		jsonBytes, err := json.MarshalIndent(data, "", "  ")
-		mustPanicOnError(asJson, err)
+		panic(asJson, err)
 		console.Log(string(jsonBytes))
 	} else {
 		console.Success()
@@ -53,7 +53,7 @@ func printResult(asJson bool, tables transpiler.TranspiledTable, actions transpi
 func main() {
 	console.Clear()
 	argsErr, args := cli.ProcessArgs(version)
-	mustPanicOnError(args.AsJson, argsErr)
+	panic(args.AsJson, argsErr)
 
 	if args.Driver == "" {
 		console.Panic("driver not specified")
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	driverErr, driver := transpiler.GetDriver(args.Driver)
-	mustPanicOnError(args.AsJson, driverErr)
+	panic(args.AsJson, driverErr)
 
 	if args.Query != "" {
 		handleDirectQuery(*args, driver)
@@ -74,7 +74,7 @@ func main() {
 
 func handleDirectQuery(args cli.Args, driver transpiler.Driver) {
 	transpileErr, tables, actions := transpiler.Transpile(driver, args.Query)
-	mustPanicOnError(args.AsJson, transpileErr)
+	panic(args.AsJson, transpileErr)
 
 	if args.Output == "" {
 		printResult(args.AsJson, *tables, *actions)
@@ -95,7 +95,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 	}
 
 	filesList, err := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
-	mustPanicOnError(args.AsJson, err)
+	panic(args.AsJson, err)
 
 	results := file.ReadFiles(filesList)
 	var combinedInput strings.Builder
@@ -108,7 +108,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 		}
 
 		actionErr, _, action := transpiler.Transpile(driver, res.Content)
-		mustPanicOnError(args.AsJson, actionErr)
+		panic(args.AsJson, actionErr)
 
 		if args.Output != "" {
 			fileName := strings.TrimSuffix(filepath.Base(res.Ref), ".bob") + ".sql"
@@ -124,7 +124,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 
 func processCombined(args cli.Args, driver transpiler.Driver, input string, files []file.File) {
 	transpileErr, tables, actions := transpiler.Transpile(driver, input)
-	mustPanicOnError(args.AsJson, transpileErr)
+	panic(args.AsJson, transpileErr)
 
 	if args.Output == "" {
 		printResult(args.AsJson, *tables, *actions)
