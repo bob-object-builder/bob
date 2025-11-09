@@ -6,17 +6,21 @@ import (
 	"salvadorsru/bob/internal/models/remove"
 )
 
-func (t Transpiler) TranspileRemove(r remove.Remove) string {
+func (t Transpiler) TranspileRemove(r remove.Remove) (error, string) {
 	query := fmt.Sprintf("DELETE FROM \n%s", formatter.Indent(r.Target))
 
 	conditionString := ""
 	if len(r.Conditions) > 0 {
-		conditionString = "\nWHERE\n" + t.TranspileConditions(r.Conditions)
+		var conditionError error
+		conditionError, conditionString = t.TranspileConditions(r.Conditions, false)
+		if conditionError != nil {
+			return conditionError, ""
+		}
 	}
 
 	if conditionString != "" {
 		query += conditionString
 	}
 
-	return query + ";"
+	return nil, query + ";"
 }

@@ -12,33 +12,43 @@ func TranspileIndex(table, column string) string {
 	return fmt.Sprintf("CREATE INDEX idx_%s_%s ON %s(%s);", table, column, table, column)
 }
 
-func (t Transpiler) TranspileReference(ref table.Reference) (string, string, error) {
+func (t Transpiler) TranspileReference(ref table.Reference) (*table.Column, string, error) {
 	referencedTable := ref.Table
 	referencedColumn := ref.Column
+	columnName := fmt.Sprintf("%s_%s", referencedTable, referencedColumn)
+	foreignKey := fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", columnName, referencedTable, referencedColumn)
 
 	tb := t.Tables.Get(referencedTable)
 	if tb == nil {
-		return "", "", fmt.Errorf("undefined reference table '%s'", referencedTable)
+		return nil, "", fmt.Errorf("undefined reference table '%s'", referencedTable)
 	}
 
 	col := tb.Columns.Get(referencedColumn)
 	if col == nil {
-		return "", "", fmt.Errorf("undefined referenced column: '%s' in table '%s'", referencedColumn, referencedTable)
+		return nil, "", fmt.Errorf("undefined referenced column: '%s' in table '%s'", referencedColumn, referencedTable)
 	}
 
-	dbType, err := t.GetType(col.Type)
-	if err != nil {
-		return "", "", err
+	column := table.Column{
+		Name:     columnName,
+		Type:     col.Type,
+		Optional: ref.Optional,
+		Default:  ref.Default,
 	}
 
-	columnName := fmt.Sprintf("%s_%s", referencedTable, referencedColumn)
-	columnDef := fmt.Sprintf("%s %s", columnName, dbType)
-	if !ref.IsOptional {
-		columnDef += " NOT NULL"
+	onUpdate := array.New[string]()
+	if ref.OnDeleteCascade {
+		onUpdate.Push("ON DELETE CASCADE")
 	}
 
-	foreignKey := fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", columnName, referencedTable, referencedColumn)
-	return columnDef, foreignKey, nil
+	if ref.OnUpdateCascade {
+		onUpdate.Push("ON UPDATE CASCADE")
+	}
+
+	if onUpdate.Length() > 0 {
+		foreignKey += "\n" + formatter.IndentLines(strings.Join(*onUpdate, "\n"), 2)
+	}
+
+	return &column, foreignKey, nil
 }
 
 func (t *Transpiler) TranspileColumn(col table.Column) (string, error) {
@@ -108,12 +118,17 @@ func (t *Transpiler) TranspileTable(tb table.Table) (error, array.Array[string])
 	}
 
 	for _, ref := range tb.References {
-		colDef, fkDef, err := t.TranspileReference(ref)
+		colRef, fkDef, err := t.TranspileReference(ref)
 		if err != nil {
 			return err, nil
 		}
 
-		columns.Push(formatter.Indent(colDef))
+		colSQL, err := t.TranspileColumn(*colRef)
+		if err != nil {
+			return err, nil
+		}
+
+		columns.Push(formatter.Indent(colSQL))
 		columns.Push(formatter.Indent(fkDef))
 	}
 

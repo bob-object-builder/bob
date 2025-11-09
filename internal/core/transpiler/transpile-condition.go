@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition]) string {
+func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], isGrouped bool) (error, string) {
 	if len(conds) == 0 {
-		return ""
+		return nil, ""
 	}
 
 	var conditions = array.New[string]()
@@ -23,6 +23,10 @@ func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition]) 
 			} else {
 				conditionKey = "OR"
 			}
+		}
+
+		if c.Comparator == "" {
+			return fmt.Errorf("malformed condition %s", c.Target), ""
 		}
 
 		var operation string
@@ -45,5 +49,10 @@ func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition]) 
 		conditions.Push(strings.TrimSpace(full))
 	}
 
-	return formatter.IndentLines(strings.Join(*conditions, "\n"))
+	head := "\nWHERE\n"
+	if isGrouped {
+		head = "\nHAVING\n"
+	}
+
+	return nil, head + formatter.IndentLines(strings.Join(*conditions, "\n"))
 }

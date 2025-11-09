@@ -13,10 +13,13 @@ import (
 const EveryField = "*"
 const SpreadEveryField = "..."
 
-func (t Transpiler) TranspileGet(g get.Get) string {
+func (t Transpiler) TranspileGet(g get.Get) (error, string) {
 	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s;"
 
-	fields := t.transpileFields(g)
+	fieldsError, fields := t.transpileFields(g)
+	if fieldsError != nil {
+		return fieldsError, ""
+	}
 	joins, conditions, groups, having := t.collectJoinsAndConditionsAndHaving(g)
 
 	selectedString := formatter.IndentLines(strings.Join(*fields, ",\n"))
@@ -27,7 +30,11 @@ func (t Transpiler) TranspileGet(g get.Get) string {
 
 	conditionString := ""
 	if len(*conditions) > 0 {
-		conditionString = "\nWHERE\n" + t.TranspileConditions(*conditions)
+		var conditionEerror error
+		conditionEerror, conditionString = t.TranspileConditions(*conditions, false)
+		if conditionEerror != nil {
+			return conditionEerror, ""
+		}
 	}
 
 	groupString := ""
@@ -37,7 +44,11 @@ func (t Transpiler) TranspileGet(g get.Get) string {
 
 	havingString := ""
 	if len(*having) > 0 {
-		havingString = "\nHAVING\n" + t.TranspileConditions(*having)
+		var conditionEerror error
+		conditionEerror, havingString = t.TranspileConditions(*having, true)
+		if conditionEerror != nil {
+			return conditionEerror, ""
+		}
 	}
 
 	limitString := ""
@@ -50,7 +61,7 @@ func (t Transpiler) TranspileGet(g get.Get) string {
 		offsetString = "\nOFFSET " + g.Offset
 	}
 
-	return fmt.Sprintf(
+	return nil, fmt.Sprintf(
 		queryTemplate,
 		selectedString,
 		g.Target,
@@ -63,7 +74,7 @@ func (t Transpiler) TranspileGet(g get.Get) string {
 	)
 }
 
-func (t Transpiler) transpileFields(g get.Get) *array.Array[string] {
+func (t Transpiler) transpileFields(g get.Get) (error, *array.Array[string]) {
 	fields := array.New[string]()
 
 	for field := range g.Selected.Range() {
@@ -84,7 +95,10 @@ func (t Transpiler) transpileFields(g get.Get) *array.Array[string] {
 	}
 
 	for _, sub := range g.Subqueries {
-		sql := t.TranspileGet(sub)
+		err, sql := t.TranspileGet(sub)
+		if err != nil {
+			return err, nil
+		}
 		fields.Push(
 			fmt.Sprintf("(\n%s\n) AS %s", formatter.IndentLines(sql), sub.Alias),
 		)
@@ -100,7 +114,7 @@ func (t Transpiler) transpileFields(g get.Get) *array.Array[string] {
 		}
 	}
 
-	return fields
+	return nil, fields
 }
 
 func (t Transpiler) collectJoinsAndConditionsAndHaving(g get.Get) (
