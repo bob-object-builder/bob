@@ -12,7 +12,7 @@ const (
 )
 
 type Column struct {
-	name          string
+	Name          string
 	Type          Type
 	Index         bool
 	Primary       bool
@@ -23,9 +23,9 @@ type Column struct {
 }
 
 func (c *Column) SetName(name string) {
-	c.name = name
+	c.Name = name
 }
 
 func (c *Column) GetName() string {
-	return c.name
+	return c.Name
 }
