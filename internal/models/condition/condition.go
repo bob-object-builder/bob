@@ -38,8 +38,8 @@ func IsCondition(s string) bool {
 }
 
 func IsComparator(s string) bool {
-	switch s {
-	case string(And), string(Else), string(Like), string(Equal), string(BiggerThan), string(LowerThan), string(Different):
+	switch Comparator(s) {
+	case And, Else, Like, Equal, BiggerThan, LowerThan, Different:
 		return true
 	}
 	return false
