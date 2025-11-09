@@ -27,4 +27,8 @@ func (l *Lexer) ParseRemove(r *remove.Remove) {
 		l.NextLine()
 		return
 	}
+
+	if remove.IsRemoveAll(l.token) {
+		r.RemoveAll = true
+	}
 }

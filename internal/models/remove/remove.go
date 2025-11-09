@@ -7,10 +7,12 @@ import (
 )
 
 const Key = "delete"
+const RemoveAllKey = "*"
 
 type Remove struct {
 	Target     string
 	Conditions array.Array[condition.Condition]
+	RemoveAll  bool
 }
 
 func New() *Remove {
@@ -23,4 +25,8 @@ func (get *Remove) IsTargetEmpty() bool {
 
 func (get *Remove) SetTarget(target string) {
 	get.Target = formatter.ToSnakeCase(target)
+}
+
+func IsRemoveAll(key string) bool {
+	return key == string(RemoveAllKey)
 }

@@ -16,6 +16,10 @@ func (t Transpiler) TranspileRemove(r remove.Remove) (error, string) {
 		if conditionError != nil {
 			return conditionError, ""
 		}
+	} else {
+		if !r.RemoveAll {
+			return fmt.Errorf("you must add conditions or use '*' to delete all in '%s'", r.Target), ""
+		}
 	}
 
 	if conditionString != "" {
