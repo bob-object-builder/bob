@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"errors"
+	"fmt"
 	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/condition"
@@ -98,6 +99,10 @@ func (l *Lexer) ParseGet(g *get.Get) error {
 
 	if strings.Contains(l.token, ".") {
 		selected = formatter.ToSnakeCase(selected)
+	}
+
+	if !checker.IsWord(selected) {
+		return fmt.Errorf("invalid selected column '%s'", selected)
 	}
 
 	g.Selected.Add(l.pill.UseOr(selected), selected)
