@@ -23,19 +23,21 @@ func (l *Lexer) ParseTable(t *table.Table) error {
 	}
 
 	if checker.StartWithUpperCase(l.token) {
-		name := l.token
+		table := l.token
 
 		column := "id"
 		if len(l.tokens) > 1 {
 			column = l.tokens[1]
 		}
 
-		isOptional := false
+		properties := []string{}
 		if len(l.tokens) > 2 {
-			isOptional = l.tokens[2] == string(table.OptionalKey)
+			properties = l.tokens[2:]
 		}
-
-		t.AddReference(name, column, isOptional)
+		err := t.AddReference(table, column, properties)
+		if err != nil {
+			return err
+		}
 	} else {
 		if len(l.tokens) < 2 {
 			return fmt.Errorf("undefined token '%s'", l.token)

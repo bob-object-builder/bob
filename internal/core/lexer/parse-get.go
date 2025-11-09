@@ -3,9 +3,11 @@ package lexer
 import (
 	"errors"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
 	"salvadorsru/bob/internal/models/get"
+	"strings"
 )
 
 func (l *Lexer) ParseGet(g *get.Get) error {
@@ -93,6 +95,11 @@ func (l *Lexer) ParseGet(g *get.Get) error {
 	}
 
 	selected := l.token
+
+	if strings.Contains(l.token, ".") {
+		selected = formatter.ToSnakeCase(selected)
+	}
+
 	g.Selected.Add(l.pill.UseOr(selected), selected)
 	return nil
 }

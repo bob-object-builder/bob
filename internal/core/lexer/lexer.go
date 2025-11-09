@@ -7,6 +7,7 @@ import (
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/lib/value/pill"
+	"salvadorsru/bob/internal/models/drop"
 	"salvadorsru/bob/internal/models/get"
 	"salvadorsru/bob/internal/models/insert"
 	"salvadorsru/bob/internal/models/join"
@@ -149,6 +150,10 @@ lineLoop:
 				l.stack.Push(raw.New())
 				l.parametrising = true
 				continue
+			case drop.Key:
+				l.stack.Push(drop.New())
+				l.parametrising = true
+				continue
 			}
 
 			item := l.stack.GetLast()
@@ -176,6 +181,8 @@ lineLoop:
 				l.ParseRemove(v)
 			case *raw.Raw:
 				l.ParseRaw(v)
+			case *drop.Drop:
+				l.ParseDrop(v)
 			}
 		}
 	}

@@ -75,5 +75,9 @@ func (l *Lexer) ParseCondition(target string) condition.Condition {
 		}
 	}
 
+	if newCondition.Comparator == "" {
+		return condition.Condition{}
+	}
+
 	return *newCondition
 }
