@@ -17,6 +17,7 @@ type Args struct {
 	OutputIsFile   bool
 	Output         string
 	AsJson         bool
+	AsDaemon       bool
 }
 
 func ProcessArgs(version string) (error, *Args) {
@@ -95,6 +96,10 @@ func ProcessArgs(version string) (error, *Args) {
 
 		if ok := existsFlag(arg, "--json"); ok {
 			args.AsJson = true
+		}
+
+		if ok := existsFlag(arg, "--daemon"); ok {
+			args.AsDaemon = true
 		}
 	}
 

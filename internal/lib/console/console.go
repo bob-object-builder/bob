@@ -21,7 +21,6 @@ func Success(v ...any) {
 func Panic(v ...any) {
 	toPrint := strings.TrimSpace(strings.Repeat("%s ", len(v)))
 	fmt.Printf("\033[31m"+"error: "+toPrint+"\033[0m\n", v...)
-	os.Exit(1)
 }
 
 func Clear() {

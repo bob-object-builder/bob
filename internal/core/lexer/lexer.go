@@ -90,7 +90,6 @@ lineLoop:
 
 		tokens := strings.Fields(line.Content)
 		l.tokens = tokens
-
 		for _, token := range tokens {
 			l.token = token
 
@@ -124,7 +123,7 @@ lineLoop:
 			if l.parametrising {
 				switch l.token {
 				case table.Key, get.Key, join.LeftJoinKey, insert.Key, remove.Key:
-					return failure.MalformedQuery(""), nil, nil
+					return failure.MalformedQuery(l.token), nil, nil
 				}
 			}
 
@@ -191,7 +190,7 @@ lineLoop:
 	}
 
 	if l.parametrising || l.capturing {
-		return failure.MalformedQuery(""), nil, nil
+		return failure.MalformedQuery(l.token), nil, nil
 	}
 
 	tables := l.GetTables()

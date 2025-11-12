@@ -32,8 +32,10 @@ const (
 	IdUnknownDriver             = "UnknownDriver"
 	IdMalformedCondition        = "MalformedCondition"
 	IdJsonParse                 = "JsonParse"
-	IdArgs                      = "Args"
+	IdMalformedArgs             = "MalformedArgs"
 	IdCollectFiles              = "CollectFiles"
+	IdInvalidInput              = "InvalidInput"
+	IdIO
 )
 
 var (
@@ -41,14 +43,16 @@ var (
 	LimitValueMustBeInteger  = &Failure{Name: IdLimitValueMustBeInteger, fail: errors.New("limit value must be an integer")}
 	OffsetValueMustBeInteger = &Failure{Name: IdOffsetValueMustBeInteger, fail: errors.New("offset value must be an integer")}
 	JsonParse                = &Failure{Name: IdJsonParse, fail: errors.New("error during json parsing")}
-	Args                     = &Failure{Name: IdArgs, fail: errors.New("error on arguments provided")}
+	MalformedArgs            = &Failure{Name: IdMalformedArgs, fail: errors.New("error on arguments provided")}
 	CollectFiles             = &Failure{Name: IdCollectFiles, fail: errors.New("error on collect files")}
+	InvalidInput             = &Failure{Name: IdInvalidInput, fail: errors.New("invalid input")}
+	IO                       = &Failure{Name: IdIO, fail: errors.New("io error")}
 )
 
 func MalformedQuery(token string) *Failure {
 	return &Failure{
 		Name: IdMalformedQuery,
-		fail: fmt.Errorf("malformed condition %s", token),
+		fail: fmt.Errorf("malformed query %s", token),
 	}
 }
 
