@@ -1,8 +1,8 @@
 package transpiler
 
 import (
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/core/lexer"
-	"salvadorsru/bob/internal/lib/failure"
 )
 
 func Transpile(driver Driver, query string) (*failure.Failure, *TranspiledTable, *TranspiledActions) {

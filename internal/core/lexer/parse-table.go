@@ -1,8 +1,8 @@
 package lexer
 
 import (
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/checker"
-	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/models/table"
 )
 

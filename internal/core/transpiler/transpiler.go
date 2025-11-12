@@ -1,7 +1,7 @@
 package transpiler
 
 import (
-	"salvadorsru/bob/internal/lib/failure"
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/models/drop"

@@ -4,7 +4,7 @@ import (
 	"salvadorsru/bob/internal/core/drivers/mariadb"
 	"salvadorsru/bob/internal/core/drivers/postgres"
 	"salvadorsru/bob/internal/core/drivers/sqlite"
-	"salvadorsru/bob/internal/lib/failure"
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/models/table"
 )
 

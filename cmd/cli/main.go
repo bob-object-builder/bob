@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/core/transpiler"
 	"salvadorsru/bob/internal/lib/cli"
 	"salvadorsru/bob/internal/lib/console"
-	"salvadorsru/bob/internal/lib/failure"
 	"salvadorsru/bob/internal/lib/file"
 	"strings"
 )

@@ -1,7 +1,7 @@
 package table
 
 import (
-	"salvadorsru/bob/internal/lib/failure"
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"strings"
 )

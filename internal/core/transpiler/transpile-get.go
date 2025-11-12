@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"salvadorsru/bob/internal/lib/failure"
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/condition"
