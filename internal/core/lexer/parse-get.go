@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/core/failure"
+	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
@@ -96,12 +96,14 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 
 	selected := l.token
 
-	if strings.Contains(l.token, ".") {
-		selected = formatter.ToSnakeCase(selected)
-	}
+	if !get.IsEveryField(selected) {
+		if !strings.Contains(l.token, ".") {
+			selected = formatter.ToSnakeCase(selected)
+		}
 
-	if !checker.IsWord(selected) {
-		return failure.InvalidSelectedColumn(selected)
+		if !checker.IsWord(selected) {
+			return failure.InvalidSelectedColumn(selected)
+		}
 	}
 
 	g.Selected.Add(l.pill.UseOr(selected), selected)
