@@ -93,7 +93,7 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 		}
 		return nil
 	}
-
+                                          
 	selected := l.token
 
 	if !get.IsEveryField(selected) {

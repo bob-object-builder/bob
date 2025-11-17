@@ -18,8 +18,6 @@ type Transpiler struct {
 	SelectedDriver Driver
 }
 
-type transpileMode string
-
 func (t Transpiler) Transpile() (*failure.Failure, *TranspiledTable, *TranspiledActions) {
 	tablesError, tables := t.TranspileTables()
 	if tablesError != nil {

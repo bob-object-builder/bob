@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"salvadorsru/bob/internal/models/literal"
 	"strings"
 	"unicode"
 )
@@ -9,6 +10,7 @@ import (
 //   - Reserved keywords (case-insensitive) are not modified.
 //   - Identifiers that are part of a dotted expression (e.g., user.orders)
 //     are not modified, even if spaces exist around the dot.
+//   - Words starting with '@' are considered literal and not modified.
 //   - Content inside string literals ("string", 'char', `raw string`) is not modified,
 //     except double quotes at the start are converted to single quotes.
 func PrefixWith(prefix string, target string, reservedKeywords []string) string {
@@ -62,9 +64,13 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 			continue
 		}
 
-		// Start of a possible identifier (ASCII letters + underscore)
-		if (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' {
+		// Handle identifiers and words starting with '@'
+		if c == '@' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' {
 			start := i
+			if c == '@' {
+				// Skip '@' for the word parsing
+				i++
+			}
 			for i < n {
 				ch := target[i]
 				if (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_' {
@@ -76,11 +82,19 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 
 			word := target[start:i]
 
+			// If word starts with '@', treat it as literal
+			if literal.IsLiteral(string(word[0])) {
+				b.WriteString(literal.GetLiteral(word))
+				continue
+			}
+
+			// Check reserved keywords
 			if _, ok := reserved[word]; ok {
 				b.WriteString(word)
 				continue
 			}
 
+			// Check if part of dotted expression
 			prev := start - 1
 			for prev >= 0 && unicode.IsSpace(rune(target[prev])) {
 				prev--
@@ -99,6 +113,7 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 				continue
 			}
 
+			// Prefix the identifier
 			b.WriteString(prefix)
 			b.WriteString(word)
 			continue

@@ -5,6 +5,7 @@ import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
+	"salvadorsru/bob/internal/models/literal"
 	"salvadorsru/bob/internal/models/table"
 	"strings"
 )
@@ -82,7 +83,7 @@ func (t *Transpiler) TranspileColumn(col table.Column) (*failure.Failure, string
 	}
 
 	if col.Default != "" {
-		query += fmt.Sprintf(" DEFAULT %s", col.Default)
+		query += fmt.Sprintf(" DEFAULT %s", literal.GetLiteral(col.Default))
 	}
 
 	return nil, query
