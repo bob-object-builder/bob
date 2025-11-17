@@ -11,9 +11,6 @@ import (
 	"salvadorsru/bob/internal/models/get"
 )
 
-const EveryField = "*"
-const SpreadEveryField = "..."
-
 func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, string) {
 	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s"
 
@@ -83,10 +80,11 @@ func (t Transpiler) transpileFields(g get.Get) (*failure.Failure, *array.Array[s
 	fields := array.New[string]()
 
 	for field := range g.Selected.Range() {
-		if field.Key == field.Value || field.Value == EveryField || field.Value == SpreadEveryField {
 
-			if field.Key == SpreadEveryField || field.Value == SpreadEveryField {
-				field.Value = EveryField
+		if field.Key == field.Value || get.IsEveryField(field.Value) {
+
+			if get.IsEveryField(field.Value) {
+				field.Value = get.EveryField
 			}
 
 			fields.Push(field.Value)
@@ -96,7 +94,7 @@ func (t Transpiler) transpileFields(g get.Get) (*failure.Failure, *array.Array[s
 	}
 
 	if fields.Length() == 0 {
-		fields.Push(EveryField)
+		fields.Push(get.EveryField)
 	}
 
 	for _, sub := range g.Subqueries {
@@ -129,9 +127,9 @@ func (t Transpiler) collectJoinsAndConditionsAndHaving(g get.Get) (
 	*array.Array[condition.Condition],
 ) {
 	joins := array.New[string]()
-	conditions := array.New[condition.Condition](g.Conditions...)
-	groups := array.New[string](g.Groups...)
-	having := array.New[condition.Condition](g.Having...)
+	conditions := array.New(g.Conditions...)
+	groups := array.New(g.Groups...)
+	having := array.New(g.Having...)
 
 	for _, join := range g.Joins {
 		joins.Push(t.TranspileLeftJoin(g.Target, join))
