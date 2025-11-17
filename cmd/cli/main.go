@@ -65,14 +65,16 @@ func printResult(asJson bool, asDaemon bool, tables *transpiler.TranspiledTable,
 			panic(asJson, asDaemon, failure.JsonParse)
 		}
 		console.Log(string(jsonBytes))
-	} else {
-		console.Success()
-		if tables != nil {
-			console.Log(tables.ToString())
-		}
-		if actions != nil {
-			console.Log("\n\n" + actions.ToString())
-		}
+		return
+	}
+
+	console.Success()
+	if tables != nil {
+		console.Log(tables.ToString())
+	}
+	if actions != nil {
+		console.Log()
+		console.Log(actions.ToString())
 	}
 }
 
