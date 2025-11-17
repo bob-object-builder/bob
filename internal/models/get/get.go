@@ -12,6 +12,8 @@ const Key = "get"
 const GroupKey = "group"
 const LimitKey = "limit"
 const OffsetKey = "offset"
+const EveryField = "*"
+const SpreadEveryField = "..."
 
 type Get struct {
 	Target     string
@@ -54,4 +56,8 @@ func IsLimit(key string) bool {
 
 func IsOffset(key string) bool {
 	return key == OffsetKey
+}
+
+func IsEveryField(selected string) bool {
+	return selected == EveryField || selected == SpreadEveryField
 }
