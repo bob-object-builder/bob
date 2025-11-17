@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"salvadorsru/bob/internal/core/transpiler"
+	"strings"
 	"syscall/js"
 )
 
@@ -52,7 +53,7 @@ func bob(this js.Value, args []js.Value) any {
 			})
 		}
 
-		result := fmt.Sprintf("%s\n\n%s\n", tables, actions)
+		result := fmt.Sprintf("%s\n\n%s\n", strings.Join(tables.Get(), "\n\n"), strings.Join(actions.Get(), "\n\n"))
 		return js.ValueOf(map[string]any{
 			"error": nil,
 			"value": result,
