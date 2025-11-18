@@ -104,6 +104,10 @@ func handleDaemonQuery(args cli.Args, driver transpiler.Driver) {
 	for scanner.Scan() {
 		line := scanner.Text()
 
+		if line == "__EXIT__" {
+			os.Exit(0)
+		}
+
 		if line == "__END__" {
 			query := strings.TrimSpace(queryBuilder.String())
 			if query != "" {
