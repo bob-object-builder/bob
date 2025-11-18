@@ -4,19 +4,18 @@ package main
 
 import (
 	"fmt"
-	"salvadorsru/bob/internal/core/drivers"
-	"salvadorsru/bob/internal/transpiler"
+	"salvadorsru/bob/internal/core/transpiler"
+	"strings"
 	"syscall/js"
 )
 
-func join_template_literal(args []js.Value) string {
+func joinTemplateLiteral(args []js.Value) string {
 	if len(args) == 0 {
 		return ""
 	}
 
 	stringsArr := args[0]
 	if stringsArr.Type() != js.TypeObject || !stringsArr.InstanceOf(js.Global().Get("Array")) {
-		// Not an array, assuming plain string
 		return args[0].String()
 	}
 
@@ -34,12 +33,19 @@ func join_template_literal(args []js.Value) string {
 }
 
 func bob(this js.Value, args []js.Value) any {
-	driver := args[0].String()
+	driverString := args[0].String()
+	driverError, driver := transpiler.GetDriver(driverString)
+	if driverError != nil {
+		return js.ValueOf(map[string]any{
+			"error": driverError.Error(),
+			"value": nil,
+		})
+	}
 
 	fn := js.FuncOf(func(this js.Value, args []js.Value) any {
-		query := join_template_literal(args)
+		query := joinTemplateLiteral(args)
 
-		transpileError, tables, actions := transpiler.Transpile(drivers.Motor(driver), query)
+		transpileError, tables, actions := transpiler.Transpile(driver, query)
 		if transpileError != nil {
 			return js.ValueOf(map[string]any{
 				"error": transpileError.Error(),
@@ -47,7 +53,7 @@ func bob(this js.Value, args []js.Value) any {
 			})
 		}
 
-		result := fmt.Sprintf("%s\n\n%s\n", tables, actions)
+		result := fmt.Sprintf("%s\n\n%s\n", strings.Join(tables.Get(), "\n\n"), strings.Join(actions.Get(), "\n\n"))
 		return js.ValueOf(map[string]any{
 			"error": nil,
 			"value": result,

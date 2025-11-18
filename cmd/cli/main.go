@@ -1,229 +1,192 @@
 package main
 
 import (
-	"fmt"
+	"bufio"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"salvadorsru/bob/internal/core/failure"
+	"salvadorsru/bob/internal/core/transpiler"
+	"salvadorsru/bob/internal/lib/cli"
+	"salvadorsru/bob/internal/lib/console"
+	"salvadorsru/bob/internal/lib/file"
 	"strings"
-	"sync"
-
-	"salvadorsru/bob/internal/core/cli"
-	"salvadorsru/bob/internal/core/console"
-	"salvadorsru/bob/internal/core/drivers"
-	"salvadorsru/bob/internal/core/file"
-	"salvadorsru/bob/internal/core/response"
-	"salvadorsru/bob/internal/core/utils"
-	"salvadorsru/bob/internal/transpiler"
 )
 
-var version = "v0.0.0"
+var version = "v0.1.0"
 
-func main() {
-	argsError, args := cli.ProcessArgs(version)
-	if argsError != nil {
-		console.Panic(argsError.Error())
-		return
-	}
-
-	if args.Driver == "" {
-		console.Panic("driver not specified")
-		return
-	}
-	if args.OutputIsFile {
-		console.Panic("output must be a folder")
-		return
-	}
-
-	var (
-		allInput      strings.Builder
-		filesToCreate []file.File
-		hasOutput     = args.Output != ""
-	)
-
-	if args.Query != "" {
-
-		transpileError, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), args.Query)
-		if transpileError != nil {
-			console.Panic(transpileError.Error())
-			return
-		}
-
-		if !hasOutput {
-			console.Success()
-			console.Log(tables, actions)
-		} else {
-			writeFiles([]file.File{
-				{
-					Ref:     "actions.sql",
-					Content: actions,
-				},
-				{
-					Ref:     "tables.sql",
-					Content: tables,
-				},
-			}, args.Output, args.OutputIsFolder)
-		}
-
-	} else {
-		fileList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
-		results := readFiles(fileList)
-
-		for _, result := range results {
-			if result.Err != nil {
-				console.Log(result.Err)
-				continue
-			}
-
-			actionErr, _, action := transpiler.TranspileActions(drivers.Motor(args.Driver), result.Content)
-			if actionErr != nil {
-				console.Panic(actionErr.Error())
-				return
-			}
-
-			if hasOutput {
-				fileName := strings.TrimSuffix(filepath.Base(result.Ref), ".bob") + ".sql"
-				filesToCreate = append(filesToCreate, file.File{
-					Ref:     fileName,
-					Content: action,
-				})
-			}
-
-			allInput.WriteString(result.Content)
-			allInput.WriteByte('\n')
-		}
-
-		if !hasOutput {
-
-			tablesErr, tables, actions := transpiler.Transpile(drivers.Motor(args.Driver), allInput.String())
-			if tablesErr != nil {
-				console.Panic(tablesErr.Error())
-				return
-			}
-
-			console.Success()
-			console.Log(tables, actions)
-
-		} else {
-
-			tablesErr, tables, _ := transpiler.TranspileTables(drivers.Motor(args.Driver), allInput.String())
-			if tablesErr != nil {
-				console.Panic(tablesErr.Error())
-				return
-			}
-
-			filesToCreate = append(filesToCreate, file.File{
-				Ref:     "tables.sql",
-				Content: tables,
-			})
-
-			writeFiles(filesToCreate, args.Output, args.OutputIsFolder)
-			console.Success("transpiled to " + args.Output)
-		}
-	}
-}
-
-func collectFiles(input string, isFile, isFolder bool) []string {
-	var fileList []string
+func collectFiles(input string, isFile, isFolder bool) (error, []string) {
 	if isFile {
-		return append(fileList, input)
+		return nil, []string{input}
 	}
 	if isFolder {
-		files, err := utils.FindBobFiles(input)
-		if err != nil {
-			console.Panic(err.Error())
-			return nil
-		}
-		return append(fileList, files...)
+		return file.FindBobFiles(input)
 	}
-	return fileList
+	return nil, nil
 }
 
-func readFiles(fileList []string) []file.File {
-	results := make([]file.File, len(fileList))
-	var wg sync.WaitGroup
-
-	for i, filePath := range fileList {
-		wg.Add(1)
-		go func(idx int, path string) {
-			defer wg.Done()
-			data, err := os.ReadFile(path)
-			if err != nil {
-				results[idx] = file.File{
-					Content: "",
-					Err:     response.Error("reading %s", path),
-					Ref:     path,
-				}
-				return
-			}
-			results[idx] = file.File{
-				Content: string(data),
-				Ref:     path,
-			}
-		}(i, filePath)
-	}
-
-	wg.Wait()
-	return results
-}
-
-func writeFiles(files []file.File, output string, outputIsFolder bool) {
-	if !outputIsFolder {
+func panic(asJson bool, asDaemon bool, err *failure.Failure) {
+	if err == nil {
 		return
 	}
 
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, 8)
-	errCh := make(chan error, len(files))
+	if asJson {
+		data := map[string]map[string]string{
+			"error": {
+				"type":    err.Name,
+				"message": strings.TrimSpace(err.Error()),
+			},
+		}
+		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
+		console.Log(string(jsonBytes))
+	} else {
+		console.Panic(err.Error())
+	}
 
-	for i, f := range files {
-		if f.Err != nil || f.Content == "" {
+	if asDaemon {
+		console.Log("__END__")
+		return
+	}
+
+	os.Exit(1)
+}
+
+func printResult(asJson bool, asDaemon bool, tables *transpiler.TranspiledTable, actions *transpiler.TranspiledActions) {
+	if asJson {
+		data := map[string]any{}
+		if tables != nil {
+			data["tables"] = tables.Get()
+		}
+		if actions != nil {
+			data["actions"] = actions.Get()
+		}
+		jsonBytes, err := json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			panic(asJson, asDaemon, failure.JsonParse)
+		}
+		console.Log(string(jsonBytes))
+		return
+	}
+
+	console.Success()
+	if tables != nil {
+		console.Log(tables.ToString())
+	}
+	if actions != nil {
+		console.Log()
+		console.Log(actions.ToString())
+	}
+}
+
+func main() {
+	console.Clear()
+	argsErr, args := cli.ProcessArgs(version)
+	if argsErr != nil {
+		panic(args.AsJson, args.AsDaemon, failure.MalformedArgs)
+	}
+
+	driverErr, driver := transpiler.GetDriver(args.Driver)
+	panic(args.AsJson, args.AsDaemon, driverErr)
+
+	if args.AsDaemon {
+		handleDaemonQuery(*args, driver)
+	} else if args.Query != "" {
+		handleDirectQuery(*args, driver)
+	} else {
+		handleInputFiles(*args, driver)
+	}
+}
+
+func handleDaemonQuery(args cli.Args, driver transpiler.Driver) {
+	scanner := bufio.NewScanner(os.Stdin)
+	var queryBuilder strings.Builder
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if line == "__END__" {
+			query := strings.TrimSpace(queryBuilder.String())
+			if query != "" {
+				transpileErr, tables, actions := transpiler.Transpile(driver, query)
+				panic(args.AsJson, args.AsDaemon, transpileErr)
+				printResult(args.AsJson, args.AsDaemon, tables, actions)
+			}
+			console.Log("__END__")
+			queryBuilder.Reset()
 			continue
 		}
 
-		wg.Add(1)
-		sem <- struct{}{}
-
-		go func(i int, f file.File) {
-			defer wg.Done()
-			defer func() { <-sem }()
-
-			defaultOutputFolder := ""
-			if output == "." {
-				defaultOutputFolder = "sql"
-			}
-
-			baseOut := filepath.Join(output, defaultOutputFolder)
-			if i != len(files)-1 {
-				baseOut = filepath.Join(baseOut, "actions")
-			}
-
-			if err := os.MkdirAll(baseOut, 0755); err != nil {
-				errCh <- fmt.Errorf("creating directory %w", err)
-				return
-			}
-
-			fullPath := filepath.Join(baseOut, filepath.Base(f.Ref))
-
-			fd, err := os.Create(fullPath)
-			if err != nil {
-				errCh <- fmt.Errorf("creating file %w", err)
-				return
-			}
-			defer fd.Close()
-
-			if _, err := fd.Write([]byte(f.Content)); err != nil {
-				errCh <- fmt.Errorf("writing to file %w", err)
-				return
-			}
-		}(i, f)
+		queryBuilder.WriteString(line)
+		queryBuilder.WriteByte('\n')
 	}
 
-	wg.Wait()
-	close(errCh)
+	if err := scanner.Err(); err != nil {
+		panic(args.AsJson, args.AsDaemon, failure.IO)
+	}
+}
 
-	for err := range errCh {
-		if err != nil {
-			console.Log("Error:", err)
+func handleDirectQuery(args cli.Args, driver transpiler.Driver) {
+	transpileErr, tables, actions := transpiler.Transpile(driver, args.Query)
+	panic(args.AsJson, args.AsDaemon, transpileErr)
+
+	if args.Output == "" {
+		printResult(args.AsJson, args.AsDaemon, tables, actions)
+		return
+	}
+
+	files := []file.File{
+		{Ref: "actions.sql", Content: actions.ToString()},
+		{Ref: "tables.sql", Content: tables.ToString()},
+	}
+	file.WriteFiles(files, args.Output, args.OutputIsFolder)
+	console.Success("transpiled to " + args.Output)
+}
+
+func handleInputFiles(args cli.Args, driver transpiler.Driver) {
+	if args.Input == "" {
+		panic(args.AsJson, args.AsDaemon, failure.InvalidInput)
+	}
+
+	err, filesList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
+	if err != nil {
+		panic(args.AsJson, args.AsDaemon, failure.CollectFiles)
+	}
+
+	results := file.ReadFiles(filesList)
+	var combinedInput strings.Builder
+	var outputFiles []file.File
+
+	for _, res := range results {
+		if res.Err != nil {
+			console.Log(res.Err)
+			continue
 		}
+
+		actionErr, _, action := transpiler.Transpile(driver, res.Content)
+		panic(args.AsJson, args.AsDaemon, actionErr)
+
+		if args.Output != "" {
+			fileName := strings.TrimSuffix(filepath.Base(res.Ref), ".bob") + ".sql"
+			outputFiles = append(outputFiles, file.File{Ref: fileName, Content: action.ToString()})
+		}
+
+		combinedInput.WriteString(res.Content)
+		combinedInput.WriteByte('\n')
 	}
+
+	processCombined(args, driver, combinedInput.String(), outputFiles)
+}
+
+func processCombined(args cli.Args, driver transpiler.Driver, input string, files []file.File) {
+	transpileErr, tables, actions := transpiler.Transpile(driver, input)
+	panic(args.AsJson, args.AsDaemon, transpileErr)
+
+	if args.Output == "" {
+		printResult(args.AsJson, args.AsDaemon, tables, actions)
+		return
+	}
+
+	files = append(files, file.File{Ref: "tables.sql", Content: tables.ToString()})
+	file.WriteFiles(files, args.Output, args.OutputIsFolder)
+	console.Success("transpiled to " + args.Output)
 }

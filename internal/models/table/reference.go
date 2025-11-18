@@ -1,24 +1,63 @@
 package table
 
 import (
-	"fmt"
-	"salvadorsru/bob/internal/core/utils"
+	"salvadorsru/bob/internal/core/failure"
+	"salvadorsru/bob/internal/lib/formatter"
+	"strings"
+)
+
+const (
+	OnDeleteCascadeKey Property = "cascade"
+	OnUpdateCascadeKey Property = "propagate"
+	BindKey            Property = "bind"
 )
 
 type Reference struct {
-	table      string
-	column     string
-	isIsolated bool
-	optional   bool
+	Table           string
+	Column          string
+	Optional        bool
+	OnDeleteCascade bool
+	OnUpdateCascade bool
+	Default         string
 }
 
-func (r *Reference) toQuery() string {
-	sql := "FOREIGN KEY (%s) REFERENCES %s(%s)"
-	if !r.isIsolated {
-		sql += " ON DELETE CASCADE"
+func (t *Table) AddReference(table string, column string, properties []string) *failure.Failure {
+	ref := Reference{
+		Table:           formatter.ToSnakeCase(table),
+		Column:          formatter.ToSnakeCase(column),
+		Optional:        false,
+		OnDeleteCascade: false,
+		OnUpdateCascade: false,
 	}
-	tableName := utils.PascalToSnakeCase(r.table)
-	columnName := fmt.Sprintf("%s_%s", tableName, r.column)
 
-	return fmt.Sprintf(sql, columnName, tableName, r.column)
+	hasDefaultValue := false
+
+	for i, token := range properties {
+		switch t := Property(token); t {
+		case DefaultKey:
+			hasDefaultValue = true
+			continue
+		case OptionalKey:
+			ref.Optional = true
+			continue
+		case OnDeleteCascadeKey:
+			ref.OnDeleteCascade = true
+			continue
+		case OnUpdateCascadeKey:
+			ref.OnUpdateCascade = true
+		case BindKey:
+			ref.OnDeleteCascade = true
+			ref.OnUpdateCascade = true
+
+		default:
+			if hasDefaultValue {
+				ref.Default = formatter.NormalizeString(strings.Join(properties[i:], " "))
+			} else {
+				return failure.InvalidProperty(token)
+			}
+		}
+	}
+
+	t.References.Push(ref)
+	return nil
 }
