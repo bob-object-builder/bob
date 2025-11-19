@@ -1,35 +1,16 @@
-//go:build js && wasm
-
 package main
 
 import (
-	"fmt"
 	"salvadorsru/bob/internal/core/transpiler"
-	"strings"
 	"syscall/js"
 )
 
-func joinTemplateLiteral(args []js.Value) string {
-	if len(args) == 0 {
-		return ""
+func sliceToJSArray(slice []string) js.Value {
+	jsArray := js.Global().Get("Array").New()
+	for _, s := range slice {
+		jsArray.Call("push", s)
 	}
-
-	stringsArr := args[0]
-	if stringsArr.Type() != js.TypeObject || !stringsArr.InstanceOf(js.Global().Get("Array")) {
-		return args[0].String()
-	}
-
-	length := stringsArr.Length()
-	result := ""
-
-	for i := 0; i < int(length); i++ {
-		result += stringsArr.Index(i).String()
-		if i+1 < len(args) {
-			result += args[i+1].String()
-		}
-	}
-
-	return result
+	return jsArray
 }
 
 func bob(this js.Value, args []js.Value) any {
@@ -43,7 +24,7 @@ func bob(this js.Value, args []js.Value) any {
 	}
 
 	fn := js.FuncOf(func(this js.Value, args []js.Value) any {
-		query := joinTemplateLiteral(args)
+		query := args[0].String()
 
 		transpileError, tables, actions := transpiler.Transpile(driver, query)
 		if transpileError != nil {
@@ -53,10 +34,12 @@ func bob(this js.Value, args []js.Value) any {
 			})
 		}
 
-		result := fmt.Sprintf("%s\n\n%s\n", strings.Join(tables.Get(), "\n\n"), strings.Join(actions.Get(), "\n\n"))
 		return js.ValueOf(map[string]any{
 			"error": nil,
-			"value": result,
+			"value": map[string]any{
+				"tables":  sliceToJSArray(tables.Get()),
+				"actions": sliceToJSArray(actions.Get()),
+			},
 		})
 	})
 
@@ -65,5 +48,5 @@ func bob(this js.Value, args []js.Value) any {
 
 func main() {
 	js.Global().Set("bob", js.FuncOf(bob))
-	select {} // keep running
+	select {}
 }
