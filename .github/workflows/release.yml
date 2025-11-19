@@ -36,10 +36,11 @@ jobs:
           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/cli/main.go
 
       - name: Upload CLI artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bob-${{ matrix.goos }}-${{ matrix.goarch }}
           path: bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
+          if-no-files-found: error
 
   build-wasm:
     runs-on: ubuntu-latest
@@ -63,7 +64,8 @@ jobs:
           fi
 
       - name: Upload WASM artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bob-wasm
           path: bob.wasm
+          if-no-files-found: warn
