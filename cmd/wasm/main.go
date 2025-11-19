@@ -20,7 +20,10 @@ func bob(this js.Value, args []js.Value) any {
 	driverError, driver := transpiler.GetDriver(driverString)
 	if driverError != nil {
 		return js.ValueOf(map[string]any{
-			"error": driverError.Error(),
+			"error": map[string]any{
+				"name":    driverError.Name,
+				"message": driverError.Error(),
+			},
 			"value": nil,
 		})
 	}
@@ -31,7 +34,10 @@ func bob(this js.Value, args []js.Value) any {
 		transpileError, tables, actions := transpiler.Transpile(driver, query)
 		if transpileError != nil {
 			return js.ValueOf(map[string]any{
-				"error": transpileError.Error(),
+				"error": map[string]any{
+					"name":    transpileError.Name,
+					"message": transpileError.Error(),
+				},
 				"value": nil,
 			})
 		}
