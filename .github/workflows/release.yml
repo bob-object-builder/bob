@@ -1,15 +1,12 @@
-name: Release bob
+name: Build bob
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,13 +30,29 @@ jobs:
         with:
           go-version: "1.24"
 
-      # Build CLI for all OS/ARCH
       - name: Build CLI
         run: |
           echo "Building CLI for ${{ matrix.goos }}-${{ matrix.goarch }}"
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/cli/main.go
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/cli/main.go
 
-      # Build WASM only once
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bob-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
+
+  build-wasm:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
       - name: Build WASM
         run: |
           if [ -f "./cmd/wasm/main.go" ]; then
@@ -49,14 +62,8 @@ jobs:
             echo "No WASM build, skipping"
           fi
 
-      # Upload artifacts
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v3
         with:
-          files: |
-            bob-linux-amd64
-            bob-darwin-amd64
-            bob-windows-amd64.exe
-            bob.wasm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: bob-wasm
+          path: bob.wasm
