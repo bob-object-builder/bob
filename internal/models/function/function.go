@@ -3,7 +3,7 @@ package function
 import (
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
-	"salvadorsru/bob/internal/models/get"
+	"salvadorsru/bob/internal/models/order"
 	"strings"
 )
 
@@ -83,10 +83,10 @@ func PrefixParameters(prefix string, target string, keywordFilter func(token str
 			string(countKey),
 			string(concatKey),
 			string(lengthKey),
-			string(get.OrderAscKey),
-			string(get.OrderDescKey),
-			string(get.OrderNullFirst),
-			string(get.OrderNullKey),
+			string(order.OrderAscKey),
+			string(order.OrderDescKey),
+			string(order.OrderNullFirst),
+			string(order.OrderNullKey),
 		},
 		keywordFilter,
 	)

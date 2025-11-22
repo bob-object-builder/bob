@@ -5,6 +5,7 @@ import (
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/models/condition"
+	"salvadorsru/bob/internal/models/order"
 )
 
 const (
@@ -23,6 +24,7 @@ type Join struct {
 	Having     array.Array[condition.Condition]
 	Groups     array.Array[string]
 	Capturing  bool
+	Orders     array.Array[order.Order]
 }
 
 func IsJoin(join string) bool {

@@ -9,6 +9,7 @@ import (
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/get"
+	"salvadorsru/bob/internal/models/order"
 )
 
 func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, string) {
@@ -22,7 +23,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 	if fieldsError != nil {
 		return fieldsError, ""
 	}
-	joins, conditions, groups, having := t.collectJoinsAndConditionsAndHaving(g)
+	joins, conditions, groups, having, orders := t.collectJoinsAndConditionsAndHaving(g)
 
 	selectedString := formatter.IndentLines(strings.Join(*fields, ",\n"))
 	joinString := ""
@@ -63,8 +64,8 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 		offsetString = "\nOFFSET " + g.Offset
 	}
 
-	orders := array.New[string]()
-	for _, o := range g.Orders {
+	transpiledOrders := array.New[string]()
+	for _, o := range *orders {
 		nullOrder := ""
 		if o.NullFirst {
 			nullOrder = fmt.Sprintf("(%s IS NOT NULL), %s %s", o.Target, o.Target, strings.ToUpper(o.Direction))
@@ -72,12 +73,12 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 			nullOrder = fmt.Sprintf("(%s IS NULL), %s %s", o.Target, o.Target, strings.ToUpper(o.Direction))
 		}
 
-		orders.Push(formatter.Indent(nullOrder))
+		transpiledOrders.Push(formatter.Indent(nullOrder))
 	}
 
 	var ordersString string
 	if orders.Length() > 0 {
-		ordersString = "\nORDER BY\n" + strings.Join(*orders, ",\n")
+		ordersString = "\nORDER BY\n" + strings.Join(*transpiledOrders, ",\n")
 	}
 
 	return nil, fmt.Sprintf(
@@ -88,8 +89,8 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 		conditionString,
 		groupString,
 		havingString,
-		limitString,
 		ordersString,
+		limitString,
 		offsetString,
 	)
 }
@@ -143,18 +144,21 @@ func (t Transpiler) collectJoinsAndConditionsAndHaving(g get.Get) (
 	*array.Array[condition.Condition],
 	*array.Array[string],
 	*array.Array[condition.Condition],
+	*array.Array[order.Order],
 ) {
 	joins := array.New[string]()
 	conditions := array.New(g.Conditions...)
 	groups := array.New(g.Groups...)
 	having := array.New(g.Having...)
+	orders := array.New(g.Orders...)
 
 	for _, join := range g.Joins {
 		joins.Push(t.TranspileLeftJoin(g.Target, join))
 		conditions.Push(join.Conditions...)
 		having.Push(join.Having...)
 		groups.Push(join.Groups...)
+		orders.Push(join.Orders...)
 	}
 
-	return joins, conditions, groups, having
+	return joins, conditions, groups, having, orders
 }

@@ -6,6 +6,7 @@ import (
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/join"
+	"salvadorsru/bob/internal/models/order"
 )
 
 const Key = "get"
@@ -14,17 +15,6 @@ const LimitKey = "limit"
 const OffsetKey = "offset"
 const EveryField = "*"
 const SpreadEveryField = "..."
-
-const OrderAscKey = "asc"
-const OrderDescKey = "desc"
-const OrderNullKey = "null"
-const OrderNullFirst = "first"
-
-type Order struct {
-	Direction string
-	Target    string
-	NullFirst bool
-}
 
 type Get struct {
 	Target     string
@@ -37,7 +27,7 @@ type Get struct {
 	Groups     array.Array[string]
 	Limit      string
 	Offset     string
-	Orders     array.Array[Order]
+	Orders     array.Array[order.Order]
 }
 
 func New(alias ...string) *Get {
@@ -72,8 +62,4 @@ func IsOffset(key string) bool {
 
 func IsEveryField(selected string) bool {
 	return selected == EveryField || selected == SpreadEveryField
-}
-
-func IsOrder(key string) bool {
-	return key == OrderAscKey || key == OrderDescKey
 }

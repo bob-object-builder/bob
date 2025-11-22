@@ -7,6 +7,7 @@ import (
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
 	"salvadorsru/bob/internal/models/get"
+	"salvadorsru/bob/internal/models/order"
 	"strings"
 )
 
@@ -85,32 +86,13 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 		return nil
 	}
 
-	if get.IsOrder(l.token) {
-		tokens := l.tokens
-		count := len(tokens)
-
-		var nullFirst bool
-
-		if count > 2 {
-			if tokens[count-2] != get.OrderNullKey {
-				return failure.InvalidOrder
-			} else {
-				if count == 3 {
-					return failure.InvalidEmptyNullPriority
-				} else {
-					nullFirst = tokens[count-1] == get.OrderNullFirst
-					l.tokens = l.tokens[1:2]
-				}
-			}
+	if order.IsOrder(l.token) {
+		orderError, order := l.ParseOrder(g.Target)
+		if orderError != nil {
+			return orderError
 		}
 
-		g.Orders.Push(get.Order{
-			Direction: l.token,
-			Target:    l.ParseReferences(g.Target),
-			NullFirst: nullFirst,
-		})
-
-		l.NextLine()
+		g.Orders.Push(*order)
 		return nil
 	}
 
