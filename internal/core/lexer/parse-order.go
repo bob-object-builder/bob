@@ -2,17 +2,12 @@ package lexer
 
 import (
 	"salvadorsru/bob/internal/core/failure"
-	"salvadorsru/bob/internal/lib/console"
 	"salvadorsru/bob/internal/models/order"
 )
 
 func (l *Lexer) ParseOrder(target string) (*failure.Failure, *order.Order) {
 	l.tokens = l.tokens[1:]
 	count := len(l.tokens)
-
-	console.Log("tokens")
-	console.Log(l.tokens)
-	console.Log()
 
 	var nullFirst bool
 
