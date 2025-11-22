@@ -85,6 +85,35 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 		return nil
 	}
 
+	if get.IsOrder(l.token) {
+		tokens := l.tokens
+		count := len(tokens)
+
+		var nullFirst bool
+
+		if count > 2 {
+			if tokens[count-2] != get.OrderNullKey {
+				return failure.InvalidOrder
+			} else {
+				if count == 3 {
+					return failure.InvalidEmptyNullPriority
+				} else {
+					nullFirst = tokens[count-1] == get.OrderNullFirst
+					l.tokens = l.tokens[1:2]
+				}
+			}
+		}
+
+		g.Orders.Push(get.Order{
+			Direction: l.token,
+			Target:    l.ParseReferences(g.Target),
+			NullFirst: nullFirst,
+		})
+
+		l.NextLine()
+		return nil
+	}
+
 	if function.IsFunction(l.token) {
 		fn := l.ParseReferences(g.Target)
 		g.Selected.Add(l.pill.UseOr(fn), fn)
@@ -93,7 +122,7 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 		}
 		return nil
 	}
-                                          
+
 	selected := l.token
 
 	if !get.IsEveryField(selected) {

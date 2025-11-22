@@ -58,7 +58,7 @@ func (t *Transpiler) TranspileColumn(col table.Column) (*failure.Failure, string
 		return failure.UndefinedTypeForColumn(col.GetName()), ""
 	}
 
-	typeError, dbType := t.GetType(col.Type)
+	typeError, dbType := t.Driver.GetType(col.Type)
 	if typeError != nil {
 		return typeError, ""
 	}
@@ -70,7 +70,7 @@ func (t *Transpiler) TranspileColumn(col table.Column) (*failure.Failure, string
 	}
 
 	if col.AutoIncrement {
-		switch t.SelectedDriver {
+		switch t.Driver.Motor {
 		case "sqlite":
 			query += " AUTOINCREMENT"
 		case "mysql":

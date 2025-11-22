@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"salvadorsru/bob/internal/core/driver"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/lib/value/object"
@@ -13,9 +14,9 @@ import (
 )
 
 type Transpiler struct {
-	Tables         object.Object[table.Table]
-	Actions        array.Array[any]
-	SelectedDriver Driver
+	Tables  object.Object[table.Table]
+	Actions array.Array[any]
+	Driver  driver.Driver
 }
 
 func (t Transpiler) Transpile() (*failure.Failure, *TranspiledTable, *TranspiledActions) {

@@ -35,7 +35,13 @@ func (l *Lexer) ParseCondition(target string) condition.Condition {
 	)
 
 	prefix := func(str string) string {
-		return function.PrefixParameters(fmt.Sprintf("%s.", target), str)
+		return function.PrefixParameters(fmt.Sprintf("%s.", target), str, func(token string) string {
+			if callerError, caller := l.driver.GetCaller(token); callerError == nil {
+				return string(caller)
+			}
+
+			return token
+		})
 	}
 
 	push := func(str string) {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"salvadorsru/bob/internal/core/failure"
+	"salvadorsru/bob/internal/lib/console"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/condition"
@@ -12,7 +13,7 @@ import (
 )
 
 func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, string) {
-	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s"
+	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s%s"
 
 	if !isSubquery {
 		queryTemplate += ";"
@@ -63,6 +64,25 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 		offsetString = "\nOFFSET " + g.Offset
 	}
 
+	orders := array.New[string]()
+	for _, o := range g.Orders {
+		nullOrder := ""
+		if o.NullFirst {
+			nullOrder = fmt.Sprintf("(%s IS NOT NULL), %s %s", o.Target, o.Target, strings.ToUpper(o.Direction))
+		} else {
+			nullOrder = fmt.Sprintf("(%s IS NULL), %s %s", o.Target, o.Target, strings.ToUpper(o.Direction))
+		}
+
+		orders.Push(formatter.Indent(nullOrder))
+	}
+
+	console.Log(strings.Join(*orders, "\n"))
+
+	var ordersString string
+	if orders.Length() > 0 {
+		ordersString = "\nORDER BY\n" + strings.Join(*orders, ",\n")
+	}
+
 	return nil, fmt.Sprintf(
 		queryTemplate,
 		selectedString,
@@ -72,6 +92,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 		groupString,
 		havingString,
 		limitString,
+		ordersString,
 		offsetString,
 	)
 }

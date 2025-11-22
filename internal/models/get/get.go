@@ -15,6 +15,17 @@ const OffsetKey = "offset"
 const EveryField = "*"
 const SpreadEveryField = "..."
 
+const OrderAscKey = "asc"
+const OrderDescKey = "desc"
+const OrderNullKey = "null"
+const OrderNullFirst = "first"
+
+type Order struct {
+	Direction string
+	Target    string
+	NullFirst bool
+}
+
 type Get struct {
 	Target     string
 	Selected   object.Object[string]
@@ -26,6 +37,7 @@ type Get struct {
 	Groups     array.Array[string]
 	Limit      string
 	Offset     string
+	Orders     array.Array[Order]
 }
 
 func New(alias ...string) *Get {
@@ -60,4 +72,8 @@ func IsOffset(key string) bool {
 
 func IsEveryField(selected string) bool {
 	return selected == EveryField || selected == SpreadEveryField
+}
+
+func IsOrder(key string) bool {
+	return key == OrderAscKey || key == OrderDescKey
 }

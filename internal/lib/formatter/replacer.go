@@ -7,13 +7,14 @@ import (
 )
 
 // PrefixWith prepends `prefix` to valid identifiers in `target`.
-//   - Reserved keywords (case-insensitive) are not modified.
+//   - Reserved keywords (case-insensitive) are not modified (but see keywordFilter).
 //   - Identifiers that are part of a dotted expression (e.g., user.orders)
 //     are not modified, even if spaces exist around the dot.
 //   - Words starting with '@' are considered literal and not modified.
 //   - Content inside string literals ("string", 'char', `raw string`) is not modified,
 //     except double quotes at the start are converted to single quotes.
-func PrefixWith(prefix string, target string, reservedKeywords []string) string {
+//   - keywordFilter can return a replacement for a token, or empty string to ignore.
+func PrefixWith(prefix string, target string, reservedKeywords []string, keywordFilter func(token string) string) string {
 	reserved := make(map[string]struct{}, len(reservedKeywords))
 	for _, kw := range reservedKeywords {
 		reserved[kw] = struct{}{}
@@ -90,6 +91,10 @@ func PrefixWith(prefix string, target string, reservedKeywords []string) string 
 
 			// Check reserved keywords
 			if _, ok := reserved[word]; ok {
+				filteredWord := keywordFilter(word)
+				if filteredWord != "" {
+					word = filteredWord
+				}
 				b.WriteString(word)
 				continue
 			}
