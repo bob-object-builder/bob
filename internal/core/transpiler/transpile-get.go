@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"salvadorsru/bob/internal/core/failure"
-	"salvadorsru/bob/internal/lib/console"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/condition"
@@ -75,8 +74,6 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 
 		orders.Push(formatter.Indent(nullOrder))
 	}
-
-	console.Log(strings.Join(*orders, "\n"))
 
 	var ordersString string
 	if orders.Length() > 0 {
