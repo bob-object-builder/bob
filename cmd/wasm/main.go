@@ -16,22 +16,12 @@ func sliceToJSArray(slice []string) js.Value {
 }
 
 func bob(this js.Value, args []js.Value) any {
-	driverString := args[0].String()
-	driverError, driver := transpiler.GetDriver(driverString)
-	if driverError != nil {
-		return js.ValueOf(map[string]any{
-			"error": map[string]any{
-				"name":    driverError.Name,
-				"message": driverError.Error(),
-			},
-			"value": nil,
-		})
-	}
+	motor := args[0].String()
 
 	fn := js.FuncOf(func(this js.Value, args []js.Value) any {
 		query := args[0].String()
 
-		transpileError, tables, actions := transpiler.Transpile(driver, query)
+		transpileError, tables, actions := transpiler.Transpile(motor, query)
 		if transpileError != nil {
 			return js.ValueOf(map[string]any{
 				"error": map[string]any{
