@@ -14,6 +14,7 @@ import (
 	"salvadorsru/bob/internal/models/join"
 	"salvadorsru/bob/internal/models/raw"
 	"salvadorsru/bob/internal/models/remove"
+	"salvadorsru/bob/internal/models/set"
 	"salvadorsru/bob/internal/models/table"
 	"strings"
 )
@@ -159,6 +160,10 @@ lineLoop:
 				l.stack.Push(drop.New())
 				l.parametrising = true
 				continue
+			case set.Key:
+				l.stack.Push(set.New())
+				l.parametrising = true
+				continue
 			}
 
 			item := l.stack.GetLast()
@@ -188,6 +193,8 @@ lineLoop:
 				l.ParseRaw(v)
 			case *drop.Drop:
 				l.ParseDrop(v)
+			case *set.Set:
+				l.ParseSet(v)
 			}
 		}
 	}

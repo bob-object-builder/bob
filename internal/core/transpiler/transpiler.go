@@ -10,6 +10,7 @@ import (
 	"salvadorsru/bob/internal/models/insert"
 	"salvadorsru/bob/internal/models/raw"
 	"salvadorsru/bob/internal/models/remove"
+	"salvadorsru/bob/internal/models/set"
 	"salvadorsru/bob/internal/models/table"
 )
 
@@ -70,6 +71,12 @@ func (t Transpiler) TranspileActions() (*failure.Failure, *TranspiledActions) {
 			actions.Push(t.TranspileRaw(a))
 		case drop.Drop:
 			actions.Push(t.TranspileDrop(a))
+		case set.Set:
+			error, transpiled := t.TranspileSet(a)
+			if error != nil {
+				return error, nil
+			}
+			actions.Push(transpiled)
 		}
 	}
 
