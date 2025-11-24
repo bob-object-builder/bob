@@ -6,6 +6,7 @@ import (
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/insert"
+	"salvadorsru/bob/internal/models/literal"
 	"strings"
 )
 
@@ -48,6 +49,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) *failure.Failure {
 	values := array.New[string]()
 
 	for _, token := range l.tokens {
+		token = literal.GetLiteral(token)
 
 		if buffering || checker.IsStringStart(token) || checker.IsExpressionStart(token) {
 			buffering = true
