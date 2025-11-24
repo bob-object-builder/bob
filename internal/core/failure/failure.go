@@ -51,7 +51,7 @@ var (
 	InvalidInput             = &Failure{Name: IdInvalidInput, fail: errors.New("invalid input")}
 	IO                       = &Failure{Name: IdIO, fail: errors.New("io error")}
 	InvalidOrder             = &Failure{Name: IdInvalidOrder, fail: errors.New("invalid order")}
-	InvalidEmptyNullPriority = &Failure{Name: IdInvalidEmptyNullPriority, fail: errors.New("invalid or missing null sort priority, specify 'first' or 'last' after 'null' in order clause")}
+	InvalidEmptyNullPriority = &Failure{Name: IdInvalidEmptyNullPriority, fail: errors.New("invalid or missing nulls sort priority, specify 'first' or 'last' in order clause")}
 	UndefinedCaller          = &Failure{Name: IdUndefinedCaller, fail: errors.New("undefined caller")}
 )
 

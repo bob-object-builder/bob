@@ -5,6 +5,7 @@ import "strings"
 const DateKey = "@date"
 const TimeKey = "@time"
 const TimestampKey = "@now"
+const NullKey = "null"
 
 func IsLiteral(token string) bool {
 	return strings.HasPrefix(token, "@")

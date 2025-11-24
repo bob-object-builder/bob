@@ -2,7 +2,7 @@ package order
 
 const OrderAscKey = "asc"
 const OrderDescKey = "desc"
-const OrderNullKey = "null"
+const OrderNullKey = "nulls"
 const OrderNullFirst = "first"
 
 type Order struct {

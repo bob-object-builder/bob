@@ -3,6 +3,7 @@ package function
 import (
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
+	"salvadorsru/bob/internal/models/literal"
 	"salvadorsru/bob/internal/models/order"
 	"strings"
 )
@@ -87,6 +88,10 @@ func PrefixParameters(prefix string, target string, keywordFilter func(token str
 			string(order.OrderDescKey),
 			string(order.OrderNullFirst),
 			string(order.OrderNullKey),
+			string(literal.NullKey),
+			string(literal.DateKey),
+			string(literal.TimeKey),
+			string(literal.TimestampKey),
 		},
 		keywordFilter,
 	)
