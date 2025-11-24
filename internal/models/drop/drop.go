@@ -17,5 +17,5 @@ func (g *Drop) HasTarget() bool {
 }
 
 func (g *Drop) SetTarget(target string) {
-	g.Target = formatter.ToSnakeCase(target)
+	g.Target = formatter.ToReferenceCase(target)
 }

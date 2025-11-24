@@ -44,7 +44,7 @@ func (j *Join) IsOnEmpty() bool {
 }
 
 func (j *Join) SetTarget(target string) {
-	j.Target = formatter.ToSnakeCase(target)
+	j.Target = formatter.ToReferenceCase(target)
 }
 
 func (j *Join) SetOn(on ...string) {
@@ -53,5 +53,5 @@ func (j *Join) SetOn(on ...string) {
 		return
 	}
 
-	j.On = formatter.ToSnakeCase(on[0])
+	j.On = formatter.ToReferenceCase(on[0])
 }

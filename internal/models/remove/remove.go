@@ -24,7 +24,7 @@ func (get *Remove) IsTargetEmpty() bool {
 }
 
 func (get *Remove) SetTarget(target string) {
-	get.Target = formatter.ToSnakeCase(target)
+	get.Target = formatter.ToReferenceCase(target)
 }
 
 func IsRemoveAll(key string) bool {

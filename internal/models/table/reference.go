@@ -23,8 +23,8 @@ type Reference struct {
 
 func (t *Table) AddReference(table string, column string, properties []string) *failure.Failure {
 	ref := Reference{
-		Table:           formatter.ToSnakeCase(table),
-		Column:          formatter.ToSnakeCase(column),
+		Table:           formatter.ToReferenceCase(table),
+		Column:          formatter.ToReferenceCase(column),
 		Optional:        false,
 		OnDeleteCascade: false,
 		OnUpdateCascade: false,

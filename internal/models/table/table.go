@@ -21,7 +21,7 @@ func New() *Table {
 }
 
 func (t *Table) SetName(name string) {
-	t.name = formatter.ToSnakeCase(name)
+	t.name = formatter.ToReferenceCase(name)
 }
 
 func (t *Table) GetName() string {

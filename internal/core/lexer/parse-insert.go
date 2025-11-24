@@ -26,13 +26,13 @@ func (l *Lexer) ParseInsert(i *insert.Insert) *failure.Failure {
 	}
 
 	if i.IsTargetEmpty() {
-		i.SetTarget(formatter.ToSnakeCase(l.token))
+		i.SetTarget(formatter.ToReferenceCase(l.token))
 		return nil
 	}
 
 	if !i.Capturing {
 		if strings.Contains(l.token, ".") {
-			i.AddColumn(formatter.ToSnakeCase(l.token))
+			i.AddColumn(formatter.ToReferenceCase(l.token))
 		} else {
 			i.AddColumn(l.token)
 		}

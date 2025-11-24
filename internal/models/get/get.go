@@ -45,7 +45,7 @@ func (g *Get) HasTarget() bool {
 }
 
 func (g *Get) SetTarget(target string) {
-	g.Target = formatter.ToSnakeCase(target)
+	g.Target = formatter.ToReferenceCase(target)
 }
 
 func IsGroup(key string) bool {

@@ -24,5 +24,5 @@ func (get *Set) IsTargetEmpty() bool {
 }
 
 func (get *Set) SetTarget(target string) {
-	get.Target = formatter.ToSnakeCase(target)
+	get.Target = formatter.ToReferenceCase(target)
 }

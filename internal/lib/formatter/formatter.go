@@ -2,31 +2,14 @@ package formatter
 
 import (
 	"strings"
-	"unicode"
 )
 
-func ToSnakeCase(str string) string {
-	var result strings.Builder
-	runes := []rune(str)
-
-	for i, r := range runes {
-		if unicode.IsUpper(r) {
-			if i > 0 {
-				prev := runes[i-1]
-				if unicode.IsLower(prev) || unicode.IsDigit(prev) ||
-					(i+1 < len(runes) && unicode.IsLower(runes[i+1]) && unicode.IsUpper(prev)) {
-					result.WriteRune('_')
-				}
-			}
-			result.WriteRune(unicode.ToLower(r))
-		} else if r == ' ' || r == '.' {
-			result.WriteRune('_')
-		} else {
-			result.WriteRune(r)
-		}
+func ToReferenceCase(str string) string {
+	if len(str) > 0 && str[0] >= 'A' && str[0] <= 'Z' {
+		str = strings.ToLower(str[:1]) + str[1:]
 	}
 
-	return result.String()
+	return strings.ReplaceAll(str, ".", "_")
 }
 
 func Indent(str string, size ...int) string {

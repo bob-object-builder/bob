@@ -3,6 +3,7 @@ package lexer
 import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/set"
 )
@@ -30,12 +31,12 @@ func (l *Lexer) ParseSet(s *set.Set) *failure.Failure {
 		return nil
 	}
 
-	if !checker.IsWord(l.token) {
+	if !checker.IsWord(l.token) && !checker.StartWithUpperCase(l.token) {
 		return failure.InvalidSetter
 	}
 
 	l.tokens = l.tokens[1:]
-	s.Values.Add(l.token, l.ParseReferences(s.Target))
+	s.Values.Add(formatter.ToReferenceCase(l.token), l.ParseReferences(s.Target))
 	l.NextLine()
 	return nil
 }

@@ -109,7 +109,7 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 
 	if !get.IsEveryField(selected) {
 		if !strings.Contains(l.token, ".") {
-			selected = formatter.ToSnakeCase(selected)
+			selected = formatter.ToReferenceCase(selected)
 		}
 
 		if !checker.IsWord(selected) {
