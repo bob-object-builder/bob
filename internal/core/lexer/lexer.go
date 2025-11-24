@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"salvadorsru/bob/internal/core/driver"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/lib/utils"
@@ -25,15 +26,16 @@ type Lexer struct {
 	tables        object.Object[table.Table]
 	actions       array.Array[any]
 	pill          pill.Pill
+	token         string
+	tokens        []string
 	locked        bool
 	jump          bool
-	tokens        []string
-	token         string
 	capturing     bool
 	parametrising bool
+	driver        driver.Driver
 }
 
-func New() *Lexer {
+func New(drv driver.Driver) *Lexer {
 	return &Lexer{
 		stack:         *NewStack[any](),
 		tables:        *object.New[table.Table](),
@@ -45,6 +47,7 @@ func New() *Lexer {
 		token:         "",
 		capturing:     false,
 		parametrising: false,
+		driver:        drv,
 	}
 }
 

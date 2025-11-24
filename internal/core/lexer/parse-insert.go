@@ -6,6 +6,7 @@ import (
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
 	"salvadorsru/bob/internal/models/insert"
+	"salvadorsru/bob/internal/models/literal"
 	"strings"
 )
 
@@ -43,21 +44,24 @@ func (l *Lexer) ParseInsert(i *insert.Insert) *failure.Failure {
 		l.tokens = l.tokens[1:]
 	}
 
-	parsingString := false
+	buffering := false
 	buffer := array.New[string]()
 	values := array.New[string]()
 
 	for _, token := range l.tokens {
-		if parsingString || checker.IsStringStart(token) {
-			parsingString = true
+		token = literal.GetLiteral(token)
+
+		if buffering || checker.IsStringStart(token) || checker.IsExpressionStart(token) {
+			buffering = true
 			buffer.Push(token)
 
-			if checker.IsStringEnd(token) {
-				parsingString = false
+			if checker.IsExpressionEnd(token) || checker.IsStringEnd(token) {
+				buffering = false
 				joined := strings.Join(*buffer, " ")
 				buffer.Clean()
 				values.Push(formatter.NormalizeString(joined))
 			}
+
 			continue
 		}
 
@@ -77,7 +81,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) *failure.Failure {
 			i.Values.Push(*empty)
 			row = i.Values.Get(0)
 		}
-		row.Push(*values...)
+		row.Push(strings.Join(*values, " "))
 	}
 
 	l.NextLine()

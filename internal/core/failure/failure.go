@@ -35,7 +35,10 @@ const (
 	IdMalformedArgs             = "MalformedArgs"
 	IdCollectFiles              = "CollectFiles"
 	IdInvalidInput              = "InvalidInput"
-	IdIO
+	IdIO                        = "IO"
+	IdInvalidOrder              = "InvalidOrder"
+	IdInvalidEmptyNullPriority  = "InvalidEmptyNullPriority"
+	IdUndefinedCaller           = "UndefinedCaller"
 )
 
 var (
@@ -47,6 +50,9 @@ var (
 	CollectFiles             = &Failure{Name: IdCollectFiles, fail: errors.New("error on collect files")}
 	InvalidInput             = &Failure{Name: IdInvalidInput, fail: errors.New("invalid input")}
 	IO                       = &Failure{Name: IdIO, fail: errors.New("io error")}
+	InvalidOrder             = &Failure{Name: IdInvalidOrder, fail: errors.New("invalid order")}
+	InvalidEmptyNullPriority = &Failure{Name: IdInvalidEmptyNullPriority, fail: errors.New("invalid or missing nulls sort priority, specify 'first' or 'last' in order clause")}
+	UndefinedCaller          = &Failure{Name: IdUndefinedCaller, fail: errors.New("undefined caller")}
 )
 
 func MalformedQuery(token string) *Failure {

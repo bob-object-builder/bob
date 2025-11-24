@@ -1,12 +1,14 @@
 package lexer
 
 import (
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/get"
 	"salvadorsru/bob/internal/models/join"
+	"salvadorsru/bob/internal/models/order"
 )
 
-func (l *Lexer) ParseLeftJoin(j *join.Join) {
+func (l *Lexer) ParseLeftJoin(j *join.Join) *failure.Failure {
 	if l.IsOpenKey() {
 		j.Capturing = false
 
@@ -14,7 +16,7 @@ func (l *Lexer) ParseLeftJoin(j *join.Join) {
 			j.SetOn("id")
 		}
 
-		return
+		return nil
 	}
 
 	if l.IsCloseKey() {
@@ -29,30 +31,30 @@ func (l *Lexer) ParseLeftJoin(j *join.Join) {
 				previous.Subjoins.Push(*j)
 			}
 
-			return
+			return nil
 		}
 
 		l.stack.Clean()
-		return
+		return nil
 	}
 
 	if j.IsTargetEmpty() {
 		j.SetTarget(l.token)
 		j.Capturing = false
-		return
+		return nil
 
 	}
 
 	if j.IsOnEmpty() {
 		j.SetOn(l.token)
-		return
+		return nil
 	}
 
 	if condition.IsCondition(l.token) {
 		cond := l.ParseCondition(j.Target)
 		j.Conditions.Push(cond)
 		l.NextLine()
-		return
+		return nil
 	}
 
 	if get.IsGroup(l.token) {
@@ -61,11 +63,23 @@ func (l *Lexer) ParseLeftJoin(j *join.Join) {
 			j.Groups.Push(l.ParseReferences(j.Target))
 		}
 		l.NextLine()
-		return
+		return nil
+	}
+
+	if order.IsOrder(l.token) {
+		orderError, order := l.ParseOrder(j.Target)
+		if orderError != nil {
+			return orderError
+		}
+
+		j.Orders.Push(*order)
+		return nil
 	}
 
 	j.Selected.Add(l.pill.UseOr(l.token), l.ParseReferences(j.Target))
 	if len(l.tokens) > 1 {
 		l.NextLine()
 	}
+
+	return nil
 }

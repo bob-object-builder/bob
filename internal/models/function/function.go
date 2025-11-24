@@ -3,6 +3,8 @@ package function
 import (
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
+	"salvadorsru/bob/internal/models/literal"
+	"salvadorsru/bob/internal/models/order"
 	"strings"
 )
 
@@ -15,6 +17,7 @@ const (
 	minKey    FunctionKey = "min"
 	maxKey    FunctionKey = "max"
 	countKey  FunctionKey = "count"
+	lengthKey FunctionKey = "length"
 	concatKey FunctionKey = "concat" // MySQL: GROUP_CONCAT, PostgreSQL: string_agg, SQLite: group_concat
 )
 
@@ -69,7 +72,7 @@ func ReconstructFunction(tokens []string, startIndex int) (string, int) {
 	return strings.Join(*tokenBuffer, " "), len(tokens) - 1
 }
 
-func PrefixParameters(prefix string, target string) string {
+func PrefixParameters(prefix string, target string, keywordFilter func(token string) string) string {
 	return formatter.PrefixWith(
 		prefix,
 		target,
@@ -80,6 +83,16 @@ func PrefixParameters(prefix string, target string) string {
 			string(maxKey),
 			string(countKey),
 			string(concatKey),
+			string(lengthKey),
+			string(order.OrderAscKey),
+			string(order.OrderDescKey),
+			string(order.OrderNullFirst),
+			string(order.OrderNullKey),
+			string(literal.NullKey),
+			string(literal.DateKey),
+			string(literal.TimeKey),
+			string(literal.TimestampKey),
 		},
+		keywordFilter,
 	)
 }

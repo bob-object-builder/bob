@@ -6,6 +6,7 @@ import (
 	"salvadorsru/bob/internal/lib/value/object"
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/join"
+	"salvadorsru/bob/internal/models/order"
 )
 
 const Key = "get"
@@ -26,6 +27,7 @@ type Get struct {
 	Groups     array.Array[string]
 	Limit      string
 	Offset     string
+	Orders     array.Array[order.Order]
 }
 
 func New(alias ...string) *Get {

@@ -15,9 +15,9 @@ import (
 
 var version = "v0.1.0"
 
-func collectFiles(input string, isFile, isFolder bool) (error, []string) {
+func collectFiles(input string, isFile, isFolder bool) ([]string, error) {
 	if isFile {
-		return nil, []string{input}
+		return []string{input}, nil
 	}
 	if isFolder {
 		return file.FindBobFiles(input)
@@ -85,19 +85,16 @@ func main() {
 		panic(args.AsJson, args.AsDaemon, failure.MalformedArgs)
 	}
 
-	driverErr, driver := transpiler.GetDriver(args.Driver)
-	panic(args.AsJson, args.AsDaemon, driverErr)
-
 	if args.AsDaemon {
-		handleDaemonQuery(*args, driver)
+		handleDaemonQuery(*args)
 	} else if args.Query != "" {
-		handleDirectQuery(*args, driver)
+		handleDirectQuery(*args)
 	} else {
-		handleInputFiles(*args, driver)
+		handleInputFiles(*args)
 	}
 }
 
-func handleDaemonQuery(args cli.Args, driver transpiler.Driver) {
+func handleDaemonQuery(args cli.Args) {
 	scanner := bufio.NewScanner(os.Stdin)
 	var queryBuilder strings.Builder
 
@@ -111,7 +108,7 @@ func handleDaemonQuery(args cli.Args, driver transpiler.Driver) {
 		if line == "__END__" {
 			query := strings.TrimSpace(queryBuilder.String())
 			if query != "" {
-				transpileErr, tables, actions := transpiler.Transpile(driver, query)
+				transpileErr, tables, actions := transpiler.Transpile(args.Driver, query)
 				panic(args.AsJson, args.AsDaemon, transpileErr)
 				printResult(args.AsJson, args.AsDaemon, tables, actions)
 			}
@@ -129,8 +126,8 @@ func handleDaemonQuery(args cli.Args, driver transpiler.Driver) {
 	}
 }
 
-func handleDirectQuery(args cli.Args, driver transpiler.Driver) {
-	transpileErr, tables, actions := transpiler.Transpile(driver, args.Query)
+func handleDirectQuery(args cli.Args) {
+	transpileErr, tables, actions := transpiler.Transpile(args.Driver, args.Query)
 	panic(args.AsJson, args.AsDaemon, transpileErr)
 
 	if args.Output == "" {
@@ -146,12 +143,12 @@ func handleDirectQuery(args cli.Args, driver transpiler.Driver) {
 	console.Success("transpiled to " + args.Output)
 }
 
-func handleInputFiles(args cli.Args, driver transpiler.Driver) {
+func handleInputFiles(args cli.Args) {
 	if args.Input == "" {
 		panic(args.AsJson, args.AsDaemon, failure.InvalidInput)
 	}
 
-	err, filesList := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
+	filesList, err := collectFiles(args.Input, args.InputIsFile, args.InputIsFolder)
 	if err != nil {
 		panic(args.AsJson, args.AsDaemon, failure.CollectFiles)
 	}
@@ -166,7 +163,7 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 			continue
 		}
 
-		actionErr, _, action := transpiler.Transpile(driver, res.Content)
+		actionErr, _, action := transpiler.Transpile(args.Driver, res.Content)
 		panic(args.AsJson, args.AsDaemon, actionErr)
 
 		if args.Output != "" {
@@ -178,11 +175,11 @@ func handleInputFiles(args cli.Args, driver transpiler.Driver) {
 		combinedInput.WriteByte('\n')
 	}
 
-	processCombined(args, driver, combinedInput.String(), outputFiles)
+	processCombined(args, combinedInput.String(), outputFiles)
 }
 
-func processCombined(args cli.Args, driver transpiler.Driver, input string, files []file.File) {
-	transpileErr, tables, actions := transpiler.Transpile(driver, input)
+func processCombined(args cli.Args, input string, files []file.File) {
+	transpileErr, tables, actions := transpiler.Transpile(args.Driver, input)
 	panic(args.AsJson, args.AsDaemon, transpileErr)
 
 	if args.Output == "" {

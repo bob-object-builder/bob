@@ -7,6 +7,7 @@ import (
 	"salvadorsru/bob/internal/models/condition"
 	"salvadorsru/bob/internal/models/function"
 	"salvadorsru/bob/internal/models/get"
+	"salvadorsru/bob/internal/models/order"
 	"strings"
 )
 
@@ -85,6 +86,16 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 		return nil
 	}
 
+	if order.IsOrder(l.token) {
+		orderError, order := l.ParseOrder(g.Target)
+		if orderError != nil {
+			return orderError
+		}
+
+		g.Orders.Push(*order)
+		return nil
+	}
+
 	if function.IsFunction(l.token) {
 		fn := l.ParseReferences(g.Target)
 		g.Selected.Add(l.pill.UseOr(fn), fn)
@@ -93,7 +104,7 @@ func (l *Lexer) ParseGet(g *get.Get) *failure.Failure {
 		}
 		return nil
 	}
-                                          
+
 	selected := l.token
 
 	if !get.IsEveryField(selected) {
