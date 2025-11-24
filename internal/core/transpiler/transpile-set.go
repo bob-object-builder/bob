@@ -10,7 +10,7 @@ import (
 )
 
 func (t Transpiler) TranspileSet(s set.Set) (*failure.Failure, string) {
-	query := "UPDATE \n%s\nSET\n%s%s"
+	query := "UPDATE \n%s\nSET\n%s%s;"
 
 	conditionString := ""
 	var conditionError *failure.Failure
