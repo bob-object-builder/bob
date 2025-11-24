@@ -39,6 +39,7 @@ const (
 	IdInvalidOrder              = "InvalidOrder"
 	IdInvalidEmptyNullPriority  = "InvalidEmptyNullPriority"
 	IdUndefinedCaller           = "UndefinedCaller"
+	IdInvalidSetter             = "IdInvalidSetter"
 )
 
 var (
@@ -53,6 +54,7 @@ var (
 	InvalidOrder             = &Failure{Name: IdInvalidOrder, fail: errors.New("invalid order")}
 	InvalidEmptyNullPriority = &Failure{Name: IdInvalidEmptyNullPriority, fail: errors.New("invalid or missing nulls sort priority, specify 'first' or 'last' in order clause")}
 	UndefinedCaller          = &Failure{Name: IdUndefinedCaller, fail: errors.New("undefined caller")}
+	InvalidSetter            = &Failure{Name: IdInvalidSetter, fail: errors.New("invalid setter value")}
 )
 
 func MalformedQuery(token string) *Failure {

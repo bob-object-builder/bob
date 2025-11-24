@@ -194,7 +194,9 @@ lineLoop:
 			case *drop.Drop:
 				l.ParseDrop(v)
 			case *set.Set:
-				l.ParseSet(v)
+				if err := l.ParseSet(v); err != nil {
+					return err, nil, nil
+				}
 			}
 		}
 	}
