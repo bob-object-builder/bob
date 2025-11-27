@@ -19,7 +19,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 		queryTemplate += ";"
 	}
 
-	fieldsError, fields := t.transpileFields(g)
+	fieldsError, fields := t.transpileFields(g, isSubquery)
 	if fieldsError != nil {
 		return fieldsError, ""
 	}
@@ -95,7 +95,7 @@ func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, 
 	)
 }
 
-func (t Transpiler) transpileFields(g get.Get) (*failure.Failure, *array.Array[string]) {
+func (t Transpiler) transpileFields(g get.Get, isSubquery bool) (*failure.Failure, *array.Array[string]) {
 	fields := array.New[string]()
 
 	for field := range g.Selected.Range() {
@@ -110,6 +110,10 @@ func (t Transpiler) transpileFields(g get.Get) (*failure.Failure, *array.Array[s
 		} else {
 			fields.Push(fmt.Sprintf("%s AS %s", field.Value, field.Key))
 		}
+	}
+
+	if isSubquery && (fields.Length() == 0 || fields.Length() > 1) {
+		return failure.InvalidSubqueryMustSelectOnlyField, nil
 	}
 
 	if fields.Length() == 0 {

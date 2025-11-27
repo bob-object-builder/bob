@@ -2,6 +2,7 @@ package transpiler
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/core/driver"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value/array"
@@ -123,6 +124,10 @@ func (t *Transpiler) TranspileTable(tb table.Table) (*failure.Failure, array.Arr
 		err, colRef, fkDef := t.TranspileReference(ref)
 		if err != nil {
 			return err, nil
+		}
+
+		if t.Driver.Motor == driver.Postgres && colRef.Type == table.IdType {
+			colRef.Type = table.IntegerType
 		}
 
 		err, colSQL := t.TranspileColumn(*colRef)

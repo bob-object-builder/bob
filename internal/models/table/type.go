@@ -10,6 +10,7 @@ type TypesMap map[Type]Type
 
 const IdType Type = "id"
 const CurrentType Type = "current"
+const IntegerType Type = "int"
 
 type Types struct {
 	Int, Int8, Int16, Int32, Int64                Type

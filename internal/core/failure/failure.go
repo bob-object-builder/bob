@@ -15,46 +15,49 @@ func (f Failure) Error() string {
 }
 
 const (
-	IdLimitValueRequired        = "LimitValueRequired"
-	IdLimitValueMustBeInteger   = "LimitValueMustBeInteger"
-	IdOffsetValueMustBeInteger  = "OffsetValueMustBeInteger"
-	IdMalformedQuery            = "MalformedQuery"
-	IdConditionValidation       = "ConditionValidation"
-	IdDeleteCondition           = "DeleteCondition"
-	IdUndefinedReferenceTable   = "UndefinedReferenceTable"
-	IdUndefinedReferencedColumn = "UndefinedReferencedColumn"
-	IdUndefinedTypeForColumn    = "UndefinedTypeForColumn"
-	IdInvalidSelectedColumn     = "InvalidSelectedColumn"
-	IdColumnNotReceivingValue   = "ColumnNotReceivingValue"
-	IdUndefinedToken            = "UndefinedToken"
-	IdInvalidTypeForColumn      = "InvalidTypeForColumn"
-	IdInvalidProperty           = "InvalidProperty"
-	IdUnknownDriver             = "UnknownDriver"
-	IdMalformedCondition        = "MalformedCondition"
-	IdJsonParse                 = "JsonParse"
-	IdMalformedArgs             = "MalformedArgs"
-	IdCollectFiles              = "CollectFiles"
-	IdInvalidInput              = "InvalidInput"
-	IdIO                        = "IO"
-	IdInvalidOrder              = "InvalidOrder"
-	IdInvalidEmptyNullPriority  = "InvalidEmptyNullPriority"
-	IdUndefinedCaller           = "UndefinedCaller"
-	IdInvalidSetter             = "IdInvalidSetter"
+	IdLimitValueRequired                = "LimitValueRequired"
+	IdLimitValueMustBeInteger           = "LimitValueMustBeInteger"
+	IdOffsetValueMustBeInteger          = "OffsetValueMustBeInteger"
+	IdMalformedQuery                    = "MalformedQuery"
+	IdConditionValidation               = "ConditionValidation"
+	IdDeleteCondition                   = "DeleteCondition"
+	IdUndefinedReferenceTable           = "UndefinedReferenceTable"
+	IdUndefinedReferencedColumn         = "UndefinedReferencedColumn"
+	IdUndefinedTypeForColumn            = "UndefinedTypeForColumn"
+	IdInvalidSelectedColumn             = "InvalidSelectedColumn"
+	IdColumnNotReceivingValue           = "ColumnNotReceivingValue"
+	IdUndefinedToken                    = "UndefinedToken"
+	IdInvalidTypeForColumn              = "InvalidTypeForColumn"
+	IdInvalidProperty                   = "InvalidProperty"
+	IdUnknownDriver                     = "UnknownDriver"
+	IdMalformedCondition                = "MalformedCondition"
+	IdJsonParse                         = "JsonParse"
+	IdMalformedArgs                     = "MalformedArgs"
+	IdCollectFiles                      = "CollectFiles"
+	IdInvalidInput                      = "InvalidInput"
+	IdIO                                = "IO"
+	IdInvalidOrder                      = "InvalidOrder"
+	IdInvalidEmptyNullPriority          = "InvalidEmptyNullPriority"
+	IdUndefinedCaller                   = "UndefinedCaller"
+	IdInvalidSetter                     = "IdInvalidSetter"
+	IdInvalidSubqueryMustSelectOneField = "InvalidSubqueryMustSelectOneField"
+	IdUndefinedReference                = "UndefinedReference"
 )
 
 var (
-	LimitValueRequired       = &Failure{Name: IdLimitValueRequired, fail: errors.New("limit value is required")}
-	LimitValueMustBeInteger  = &Failure{Name: IdLimitValueMustBeInteger, fail: errors.New("limit value must be an integer")}
-	OffsetValueMustBeInteger = &Failure{Name: IdOffsetValueMustBeInteger, fail: errors.New("offset value must be an integer")}
-	JsonParse                = &Failure{Name: IdJsonParse, fail: errors.New("error during json parsing")}
-	MalformedArgs            = &Failure{Name: IdMalformedArgs, fail: errors.New("error on arguments provided")}
-	CollectFiles             = &Failure{Name: IdCollectFiles, fail: errors.New("error on collect files")}
-	InvalidInput             = &Failure{Name: IdInvalidInput, fail: errors.New("invalid input")}
-	IO                       = &Failure{Name: IdIO, fail: errors.New("io error")}
-	InvalidOrder             = &Failure{Name: IdInvalidOrder, fail: errors.New("invalid order")}
-	InvalidEmptyNullPriority = &Failure{Name: IdInvalidEmptyNullPriority, fail: errors.New("invalid or missing nulls sort priority, specify 'first' or 'last' in order clause")}
-	UndefinedCaller          = &Failure{Name: IdUndefinedCaller, fail: errors.New("undefined caller")}
-	InvalidSetter            = &Failure{Name: IdInvalidSetter, fail: errors.New("invalid setter value")}
+	LimitValueRequired                 = &Failure{Name: IdLimitValueRequired, fail: errors.New("limit value is required")}
+	LimitValueMustBeInteger            = &Failure{Name: IdLimitValueMustBeInteger, fail: errors.New("limit value must be an integer")}
+	OffsetValueMustBeInteger           = &Failure{Name: IdOffsetValueMustBeInteger, fail: errors.New("offset value must be an integer")}
+	JsonParse                          = &Failure{Name: IdJsonParse, fail: errors.New("error during json parsing")}
+	MalformedArgs                      = &Failure{Name: IdMalformedArgs, fail: errors.New("error on arguments provided")}
+	CollectFiles                       = &Failure{Name: IdCollectFiles, fail: errors.New("error on collect files")}
+	InvalidInput                       = &Failure{Name: IdInvalidInput, fail: errors.New("invalid input")}
+	IO                                 = &Failure{Name: IdIO, fail: errors.New("io error")}
+	InvalidOrder                       = &Failure{Name: IdInvalidOrder, fail: errors.New("invalid order")}
+	InvalidEmptyNullPriority           = &Failure{Name: IdInvalidEmptyNullPriority, fail: errors.New("invalid or missing nulls sort priority, specify 'first' or 'last' in order clause")}
+	UndefinedCaller                    = &Failure{Name: IdUndefinedCaller, fail: errors.New("undefined caller")}
+	InvalidSetter                      = &Failure{Name: IdInvalidSetter, fail: errors.New("invalid setter value")}
+	InvalidSubqueryMustSelectOnlyField = &Failure{Name: IdInvalidSubqueryMustSelectOneField, fail: errors.New("invalid subquery must select one field")}
 )
 
 func MalformedQuery(token string) *Failure {
@@ -150,5 +153,12 @@ func MalformedCondition(condition string) *Failure {
 	return &Failure{
 		Name: IdMalformedCondition,
 		fail: error,
+	}
+}
+
+func UndefinedReference(table string) *Failure {
+	return &Failure{
+		Name: IdUndefinedReference,
+		fail: fmt.Errorf("undefined previously referenced table '%s'", table),
 	}
 }

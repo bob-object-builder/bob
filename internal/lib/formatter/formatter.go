@@ -5,11 +5,16 @@ import (
 )
 
 func ToReferenceCase(str string) string {
-	if len(str) > 0 && str[0] >= 'A' && str[0] <= 'Z' {
-		str = strings.ToLower(str[:1]) + str[1:]
-	}
+	parts := strings.Split(str, "->")
 
-	return strings.ReplaceAll(str, ".", "_")
+	for i, part := range parts {
+		if len(part) > 0 && part[0] >= 'A' && part[0] <= 'Z' {
+			part = strings.ToLower(part[:1]) + part[1:]
+		}
+		part = strings.ReplaceAll(part, ".", "_")
+		parts[i] = part
+	}
+	return strings.Join(parts, ".")
 }
 
 func Indent(str string, size ...int) string {

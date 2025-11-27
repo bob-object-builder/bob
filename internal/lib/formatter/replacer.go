@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"salvadorsru/bob/internal/lib/checker"
 	"salvadorsru/bob/internal/models/literal"
 	"strings"
 	"unicode"
@@ -8,13 +9,14 @@ import (
 
 // PrefixWith prepends `prefix` to valid identifiers in `target`.
 //   - Reserved keywords (case-insensitive) are not modified (but see keywordFilter).
-//   - Identifiers that are part of a dotted expression (e.g., user.orders)
-//     are not modified, even if spaces exist around the dot.
+//   - Identifiers that are part of a dotted expression (e.g., user.orders) or arrow expression (e.g., user->orders)
+//     are not modified, even if spaces exist around the dot or arrow.
 //   - Words starting with '@' are considered literal and not modified.
 //   - Content inside string literals ("string", 'char', `raw string`) is not modified,
 //     except double quotes at the start are converted to single quotes.
 //   - keywordFilter can return a replacement for a token, or empty string to ignore.
 func PrefixWith(prefix string, target string, reservedKeywords []string, keywordFilter func(token string) string) string {
+	isPrefixed := false
 	reserved := make(map[string]struct{}, len(reservedKeywords))
 	for _, kw := range reservedKeywords {
 		reserved[kw] = struct{}{}
@@ -69,8 +71,7 @@ func PrefixWith(prefix string, target string, reservedKeywords []string, keyword
 		if c == '@' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' {
 			start := i
 			if c == '@' {
-				// Skip '@' for the word parsing
-				i++
+				i++ // Skip '@' for word parsing
 			}
 			for i < n {
 				ch := target[i]
@@ -99,28 +100,46 @@ func PrefixWith(prefix string, target string, reservedKeywords []string, keyword
 				continue
 			}
 
-			// Check if part of dotted expression
+			// Check if part of dotted or arrow expression
 			prev := start - 1
 			for prev >= 0 && unicode.IsSpace(rune(target[prev])) {
 				prev--
 			}
-			if prev >= 0 && target[prev] == '.' {
-				b.WriteString(word)
-				continue
+			if prev >= 0 {
+				// Check '.' before
+				if target[prev] == '.' {
+					b.WriteString(word)
+					continue
+				}
+				// Check '->' before
+				if prev > 0 && target[prev-1] == '-' && target[prev] == '>' {
+					b.WriteString(word)
+					continue
+				}
 			}
 
 			next := i
 			for next < n && unicode.IsSpace(rune(target[next])) {
 				next++
 			}
-			if next < n && target[next] == '.' {
-				b.WriteString(word)
-				continue
+			if next < n {
+				// Check '.' after
+				if target[next] == '.' {
+					b.WriteString(word)
+					continue
+				}
+				// Check '->' after
+				if next+1 < n && target[next] == '-' && target[next+1] == '>' {
+					b.WriteString(word)
+					continue
+				}
 			}
 
+			isPrefixed = true
 			// Prefix the identifier
 			b.WriteString(prefix)
 			b.WriteString(word)
+
 			continue
 		}
 
@@ -128,5 +147,11 @@ func PrefixWith(prefix string, target string, reservedKeywords []string, keyword
 		i++
 	}
 
-	return b.String()
+	token := b.String()
+
+	if !isPrefixed && checker.IsReference(token) {
+		token = ToReferenceCase(token)
+	}
+
+	return token
 }

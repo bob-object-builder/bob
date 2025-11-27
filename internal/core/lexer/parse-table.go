@@ -3,6 +3,7 @@ package lexer
 import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/checker"
+	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/models/table"
 )
 
@@ -34,7 +35,14 @@ func (l *Lexer) ParseTable(t *table.Table) *failure.Failure {
 		if len(l.tokens) > 2 {
 			properties = l.tokens[2:]
 		}
-		err := t.AddReference(table, column, properties)
+
+		refTable := formatter.ToReferenceCase(table)
+
+		if l.tables.Get(refTable) == nil {
+			return failure.UndefinedReference(table)
+		}
+
+		err := t.AddReference(refTable, column, properties)
 		if err != nil {
 			return err
 		}

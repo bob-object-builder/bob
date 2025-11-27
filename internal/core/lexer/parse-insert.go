@@ -40,7 +40,7 @@ func (l *Lexer) ParseInsert(i *insert.Insert) *failure.Failure {
 	}
 
 	if !i.IsBulk {
-		i.AddColumn(l.token)
+		i.AddColumn(formatter.ToReferenceCase(l.token))
 		l.tokens = l.tokens[1:]
 	}
 
