@@ -46,6 +46,7 @@ func (t *Transpiler) TranspileTable(tb *table.Table) (*failure.Failure, string) 
 		referencedColumn.IsAutoIncrement = false
 		referencedColumn.IsPrimary = false
 		referencedColumn.IsReference = true
+		referencedColumn.IsOptional = r.IsOptional
 
 		tb.Columns.Set(columnsName, *referencedColumn)
 		references.Push(ref)
@@ -100,6 +101,10 @@ func (t *Transpiler) TranspileTable(tb *table.Table) (*failure.Failure, string) 
 
 		if c.IsUnique {
 			unique.Push(c.Name)
+		}
+
+		if !c.IsOptional {
+			col += " NOT NULL"
 		}
 
 		if c.Default != "" {
