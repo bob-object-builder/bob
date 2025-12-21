@@ -4,7 +4,6 @@ import (
 	"salvadorsru/bob/internal/core/drivers/driver"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/core/lexer"
-	"salvadorsru/bob/internal/lib/console"
 	"salvadorsru/bob/internal/lib/value"
 	"salvadorsru/bob/internal/model/drop"
 	"salvadorsru/bob/internal/model/get"
@@ -40,7 +39,7 @@ func (t *Transpiler) Transpile(query string) (failure *failure.Failure, tables *
 	for table := range t.tables.Range() {
 		tbError, tb := t.TranspileTable(table.Value)
 		if tbError != nil {
-			console.Log(tbError)
+			return tbError, nil, nil
 		}
 
 		tablesList.Push(tb)
