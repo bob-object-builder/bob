@@ -15,6 +15,7 @@ type Lexer struct {
 	Driver      driver.Driver
 	isParameter bool
 	stack       stack.Stack[any]
+	inComment   bool
 }
 
 var latestKey string
@@ -116,6 +117,23 @@ func (l *Lexer) Parse(query string) (*failure.Failure, *stack.Stack[any]) {
 	//   MAIN LOOP (UTF-8 SAFE)
 	// =========================
 	for _, ch := range query {
+
+		// =========================
+		//   COMMENT MODE (# ... \n)
+		// =========================
+		if l.inComment {
+			if ch == '\n' {
+				l.inComment = false
+
+				if err := emitValue(); err != nil {
+					return err, nil
+				}
+				if err := emitKey("\n"); err != nil {
+					return err, nil
+				}
+			}
+			continue
+		}
 
 		// ========================
 		//   STRING MODE
@@ -233,6 +251,13 @@ func (l *Lexer) Parse(query string) (*failure.Failure, *stack.Stack[any]) {
 		//  OUTSIDE EXPRESSION
 		// =======================
 		switch ch {
+
+		case '#':
+			if err := emitValue(); err != nil {
+				return err, nil
+			}
+			l.inComment = true
+
 		case '(':
 			if len(word) > 0 {
 				if !kw.IsFunction(word) {
