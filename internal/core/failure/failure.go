@@ -46,6 +46,7 @@ const (
 	IdMalformedArgs                        = "MalformedArgs"
 	IdJsonParse                            = "JsonParse"
 	IdUndefinedOrderTarget                 = "UndefinedOrderTarget"
+	IdLimitMustBeNumeric                   = "LimitMustBeNumeric"
 )
 
 /*
@@ -138,6 +139,10 @@ var (
 	UndefinedOrderTarget = &Failure{
 		Name:    IdUndefinedOrderTarget,
 		Message: "undefined order target",
+	}
+	LimitMustBeNumeric = &Failure{
+		Name:    IdLimitMustBeNumeric,
+		Message: "limit must be a number",
 	}
 )
 
