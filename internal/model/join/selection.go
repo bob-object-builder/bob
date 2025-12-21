@@ -38,9 +38,5 @@ func (s *Selection) Parse(token value.Token) *failure.Failure {
 		return nil
 	}
 
-	// if s.Target != "" {
-	// 	return failure.SelectionValueIsAlreadyDefined
-	// }
-
 	return nil
 }
