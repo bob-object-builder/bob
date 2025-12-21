@@ -2,6 +2,7 @@ package table
 
 import (
 	"salvadorsru/bob/internal/core/kw"
+	"strings"
 )
 
 type Reference struct {
@@ -12,7 +13,7 @@ type Reference struct {
 
 func NewReference(target string) *Reference {
 	return &Reference{
-		Target: target,
+		Target: strings.ToLower(target),
 	}
 }
 

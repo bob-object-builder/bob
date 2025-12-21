@@ -48,7 +48,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 		switch v := col.Value.(type) {
 		case *get.Selection:
 			q := TranspileSelection(v, col.Alias)
-			selected.Push(formatter.Indent(q))
+			selected.Push(formatter.Indent(formatter.ToReferenceCase(q)))
 
 		case *get.Get:
 			subErr, subSQL := TranspileGet(v, true)
@@ -56,10 +56,10 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 				return subErr, ""
 			}
 			q := fmt.Sprintf("(\n%s\n) AS %s", formatter.IndentLines(subSQL), col.Alias)
-			selected.Push(formatter.IndentLines(q))
+			selected.Push(formatter.IndentLines(formatter.ToReferenceCase(q)))
 
 		default:
-			selected.Push(formatter.Indent(col.Alias))
+			selected.Push(formatter.Indent(formatter.ToReferenceCase(col.Alias)))
 		}
 	}
 

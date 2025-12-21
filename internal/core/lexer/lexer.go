@@ -7,7 +7,6 @@ import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/core/kw"
 	"salvadorsru/bob/internal/lib/checker"
-	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/stack"
 	"salvadorsru/bob/internal/lib/value"
 )
@@ -53,7 +52,7 @@ func (l *Lexer) Parse(query string) (*failure.Failure, *stack.Stack[any]) {
 
 		return l.onValue(value.Token{
 			Type:  value.Key,
-			Value: formatter.ToReferenceCase(v),
+			Value: v,
 		})
 	}
 

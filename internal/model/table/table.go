@@ -3,6 +3,7 @@ package table
 import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/value"
+	"strings"
 )
 
 type Table struct {
@@ -29,7 +30,7 @@ func (t *Table) Merge(i any) *failure.Failure {
 
 func (t *Table) Parse(token string) {
 	if t.Name == "" {
-		t.Name = token
+		t.Name = strings.ToLower(token)
 		return
 	}
 }
