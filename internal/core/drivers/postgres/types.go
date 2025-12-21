@@ -1,8 +1,8 @@
 package postgres
 
-import "salvadorsru/bob/internal/models/table"
+import "salvadorsru/bob/internal/core/drivers/driver"
 
-var Types = table.NewTypes(table.Types{
+var Types = driver.NewTypes(driver.Map{
 	// Integers
 	Int:   "INTEGER",
 	Int8:  "SMALLINT",
@@ -24,7 +24,7 @@ var Types = table.NewTypes(table.Types{
 	Date:      "DATE",
 	Time:      "TIME",
 	Datetime:  "DATETIME",
-	Id:        "SERIAL",
+	Id:        "BIGINT",
 	Boolean:   "BOOLEAN",
 	Current:   "TIMESTAMP",
 	Timestamp: "TIMESTAMP",

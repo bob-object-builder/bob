@@ -1,146 +1,239 @@
 package failure
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
 type Failure struct {
-	Name string
-	fail error
+	Name    string
+	Message string
 }
 
-func (f Failure) Error() string {
-	return f.fail.Error()
-}
+/*
+|--------------------------------------------------------------------------
+| Failure IDs
+|--------------------------------------------------------------------------
+*/
 
 const (
-	IdLimitValueRequired        = "LimitValueRequired"
-	IdLimitValueMustBeInteger   = "LimitValueMustBeInteger"
-	IdOffsetValueMustBeInteger  = "OffsetValueMustBeInteger"
-	IdMalformedQuery            = "MalformedQuery"
-	IdConditionValidation       = "ConditionValidation"
-	IdDeleteCondition           = "DeleteCondition"
-	IdUndefinedReferenceTable   = "UndefinedReferenceTable"
-	IdUndefinedReferencedColumn = "UndefinedReferencedColumn"
-	IdUndefinedTypeForColumn    = "UndefinedTypeForColumn"
-	IdInvalidSelectedColumn     = "InvalidSelectedColumn"
-	IdColumnNotReceivingValue   = "ColumnNotReceivingValue"
-	IdUndefinedToken            = "UndefinedToken"
-	IdInvalidTypeForColumn      = "InvalidTypeForColumn"
-	IdInvalidProperty           = "InvalidProperty"
-	IdUnknownDriver             = "UnknownDriver"
-	IdMalformedCondition        = "MalformedCondition"
-	IdJsonParse                 = "JsonParse"
-	IdMalformedArgs             = "MalformedArgs"
-	IdCollectFiles              = "CollectFiles"
-	IdInvalidInput              = "InvalidInput"
-	IdIO
+	IdUndefinedTypeForColumn               = "UndefinedTypeForColumn"
+	IdConditionValidation                  = "ConditionValidation"
+	IdUndefinedConditionComparator         = "UndefinedConditionComparator"
+	IdMalformedCondition                   = "MalformedCondition"
+	IdUndefinedFunction                    = "UndefinedFunction"
+	IdInvalidMotor                         = "InvalidMotor"
+	IdUndefinedKeyword                     = "UndefinedKeyword"
+	IdTypeNotFound                         = "TypeNotFound"
+	IdNotEnoughValues                      = "NotEnoughValues"
+	IdUnknownDriver                        = "UnknownDriver"
+	IdUndefinedValueOnSetter               = "UndefinedValueOnSetter"
+	IdUndefinedNullsDefinition             = "UndefinedNullsDefinition"
+	IdSubqueryMustBeSingleColumn           = "SubqueryMustBeSingleColumn"
+	IdCannotUseExpressionOrStringSelection = "CannotUseExpressionOrStringAsSelection"
+	IdTypeDoesNotImplementMerge            = "TypeDoesNotImplementMerge"
+	IdUnclosedExpression                   = "UnclosedExpression"
+	IdUnclosedStringLiteral                = "UnclosedStringLiteral"
+	IdInvalidExpressionBeforeParenthesis   = "InvalidExpressionBeforeParenthesis"
+	IdUnexpectedClosingParenthesis         = "UnexpectedClosingParenthesis"
+	IdExpressionProcessingEmptyResult      = "ExpressionProcessingEmptyResult"
+	IdTypeDoesNotImplementTableChild       = "TypeDoesNotImplementTableChild"
+	IdMissingAliasForExpression            = "MissingAliasForExpression"
+	IdSelectionValueIsAlreadyDefined       = "SelectionValueIsAlreadyDefined"
+	IdInvalidTableColumn                   = "InvalidTableColumn"
+	IdInvalidTableReference                = "InvalidTableReference"
+	IdTableNameIsEmpty                     = "TableNameIsEmpty"
+	IdInvalidInput                         = "InvalidInput"
+	IdCollectFiles                         = "CollectFiles"
+	IdIO                                   = "IO"
+	IdMalformedArgs                        = "MalformedArgs"
+	IdJsonParse                            = "JsonParse"
+	IdUndefinedOrderTarget                 = "UndefinedOrderTarget"
 )
+
+/*
+|--------------------------------------------------------------------------
+| Static Failures
+|--------------------------------------------------------------------------
+*/
 
 var (
-	LimitValueRequired       = &Failure{Name: IdLimitValueRequired, fail: errors.New("limit value is required")}
-	LimitValueMustBeInteger  = &Failure{Name: IdLimitValueMustBeInteger, fail: errors.New("limit value must be an integer")}
-	OffsetValueMustBeInteger = &Failure{Name: IdOffsetValueMustBeInteger, fail: errors.New("offset value must be an integer")}
-	JsonParse                = &Failure{Name: IdJsonParse, fail: errors.New("error during json parsing")}
-	MalformedArgs            = &Failure{Name: IdMalformedArgs, fail: errors.New("error on arguments provided")}
-	CollectFiles             = &Failure{Name: IdCollectFiles, fail: errors.New("error on collect files")}
-	InvalidInput             = &Failure{Name: IdInvalidInput, fail: errors.New("invalid input")}
-	IO                       = &Failure{Name: IdIO, fail: errors.New("io error")}
+	UndefinedNullsDefinition = &Failure{
+		Name:    IdUndefinedNullsDefinition,
+		Message: "undefined nulls definition",
+	}
+	SubqueryMustBeSingleColumn = &Failure{
+		Name:    IdSubqueryMustBeSingleColumn,
+		Message: "subquery must select a single column",
+	}
+	CannotUseExpressionOrStringAsSelection = &Failure{
+		Name:    IdCannotUseExpressionOrStringSelection,
+		Message: "cannot use expression or string as selection",
+	}
+	TypeDoesNotImplementMerge = &Failure{
+		Name:    IdTypeDoesNotImplementMerge,
+		Message: "type does not implement Merge method",
+	}
+	UnclosedExpression = &Failure{
+		Name:    IdUnclosedExpression,
+		Message: "unclosed expression because of missing ')'",
+	}
+	UnclosedStringLiteral = &Failure{
+		Name:    IdUnclosedStringLiteral,
+		Message: "unclosed string literal",
+	}
+	InvalidExpressionBeforeParenthesis = &Failure{
+		Name:    IdInvalidExpressionBeforeParenthesis,
+		Message: "invalid expression before '('",
+	}
+	UnexpectedClosingParenthesis = &Failure{
+		Name:    IdUnexpectedClosingParenthesis,
+		Message: "unexpected ')' without matching '('",
+	}
+	ExpressionProcessingEmptyResult = &Failure{
+		Name:    IdExpressionProcessingEmptyResult,
+		Message: "expression processing error empty result",
+	}
+	TypeDoesNotImplementTableChild = &Failure{
+		Name:    IdTypeDoesNotImplementTableChild,
+		Message: "type does not implement TableChild",
+	}
+	MissingAliasForExpression = &Failure{
+		Name:    IdMissingAliasForExpression,
+		Message: "missing alias for expression",
+	}
+	SelectionValueIsAlreadyDefined = &Failure{
+		Name:    IdSelectionValueIsAlreadyDefined,
+		Message: "selection value is already defined",
+	}
+	InvalidTableColumn = &Failure{
+		Name:    IdInvalidTableColumn,
+		Message: "invalid table column",
+	}
+	InvalidTableReference = &Failure{
+		Name:    IdInvalidTableReference,
+		Message: "invalid table reference",
+	}
+	TableNameIsEmpty = &Failure{
+		Name:    IdTableNameIsEmpty,
+		Message: "table name is empty",
+	}
+	InvalidInput = &Failure{
+		Name:    IdInvalidInput,
+		Message: "invalid input",
+	}
+	CollectFiles = &Failure{
+		Name:    IdCollectFiles,
+		Message: "error on collect files",
+	}
+	IO = &Failure{
+		Name:    IdIO,
+		Message: "io error",
+	}
+	MalformedArgs = &Failure{
+		Name:    IdMalformedArgs,
+		Message: "error on arguments provided",
+	}
+	JsonParse = &Failure{
+		Name:    IdJsonParse,
+		Message: "error during json parsing",
+	}
+	UndefinedOrderTarget = &Failure{
+		Name:    IdUndefinedOrderTarget,
+		Message: "undefined order target",
+	}
 )
 
-func MalformedQuery(token string) *Failure {
+/*
+|--------------------------------------------------------------------------
+| Dynamic Failures
+|--------------------------------------------------------------------------
+*/
+
+func UndefinedTypeForColumn(tp string, column string) *Failure {
 	return &Failure{
-		Name: IdMalformedQuery,
-		fail: fmt.Errorf("malformed query %s", token),
+		Name:    IdUndefinedTypeForColumn,
+		Message: fmt.Sprintf("undefined type '%s' for column '%s'", tp, column),
+	}
+}
+
+func UndefinedConditionComparator(key string) *Failure {
+	return &Failure{
+		Name:    IdUndefinedConditionComparator,
+		Message: fmt.Sprintf("undefined condition comparator '%s'", key),
 	}
 }
 
 func ConditionValidation(table, target string) *Failure {
 	return &Failure{
 		Name: IdConditionValidation,
-		fail: fmt.Errorf("validation failed for table '%s' target '%s' condition cannot be empty", table, target),
-	}
-}
-
-func DeleteCondition(table string) *Failure {
-	return &Failure{
-		Name: IdDeleteCondition,
-		fail: fmt.Errorf("you must add conditions or use '*' to delete all in '%s'", table),
-	}
-}
-
-func UndefinedReferenceTable(table string) *Failure {
-	return &Failure{
-		Name: IdUndefinedReferenceTable,
-		fail: fmt.Errorf("undefined reference table '%s'", table),
-	}
-}
-
-func UndefinedReferencedColumn(column, table string) *Failure {
-	return &Failure{
-		Name: IdUndefinedReferencedColumn,
-		fail: fmt.Errorf("undefined referenced column: '%s' in table '%s'", column, table),
-	}
-}
-
-func UndefinedTypeForColumn(column string) *Failure {
-	return &Failure{
-		Name: IdUndefinedTypeForColumn,
-		fail: fmt.Errorf("undefined type for column: %s", column),
-	}
-}
-
-func InvalidSelectedColumn(column string) *Failure {
-	return &Failure{
-		Name: IdInvalidSelectedColumn,
-		fail: fmt.Errorf("invalid selected column '%s'", column),
-	}
-}
-
-func ColumnNotReceivingValue(column, position string) *Failure {
-	return &Failure{
-		Name: IdColumnNotReceivingValue,
-		fail: fmt.Errorf("column '%s' is not receiving a value at [%s]", column, position),
-	}
-}
-
-func UndefinedToken(token string) *Failure {
-	return &Failure{
-		Name: IdUndefinedToken,
-		fail: fmt.Errorf("undefined token '%s'", token),
-	}
-}
-
-func InvalidTypeForColumn(column, typ string) *Failure {
-	return &Failure{
-		Name: IdInvalidTypeForColumn,
-		fail: fmt.Errorf("invalid type %q for column '%s'", typ, column),
-	}
-}
-
-func InvalidProperty(property string) *Failure {
-	return &Failure{
-		Name: IdInvalidProperty,
-		fail: fmt.Errorf("invalid property '%s'", property),
-	}
-}
-
-func UnknownDriver(driver string) *Failure {
-	return &Failure{
-		Name: IdUnknownDriver,
-		fail: fmt.Errorf("unknown driver: %s", driver),
+		Message: fmt.Sprintf(
+			"validation failed for condition in '%s' with target '%s' condition cannot be empty",
+			table,
+			target,
+		),
 	}
 }
 
 func MalformedCondition(condition string) *Failure {
-	error := fmt.Errorf("malformed condition")
+	message := "malformed condition"
 	if condition != "" {
-		error = fmt.Errorf("malformed condition %s", condition)
+		message = fmt.Sprintf("malformed condition %s", condition)
 	}
 
 	return &Failure{
-		Name: IdMalformedCondition,
-		fail: error,
+		Name:    IdMalformedCondition,
+		Message: message,
+	}
+}
+
+func UndefinedFunction(function string) *Failure {
+	return &Failure{
+		Name:    IdUndefinedFunction,
+		Message: fmt.Sprintf("undefined function '%s'", function),
+	}
+}
+
+func InvalidMotor(motor string) *Failure {
+	return &Failure{
+		Name:    IdInvalidMotor,
+		Message: fmt.Sprintf("invalid motor '%s'", motor),
+	}
+}
+
+func UndefinedKeyword(keyType string, keyword string) *Failure {
+	return &Failure{
+		Name:    IdUndefinedKeyword,
+		Message: fmt.Sprintf("undefined '%s' keyword '%s'", keyType, keyword),
+	}
+}
+
+func TypeNotFound(typeName string) *Failure {
+	return &Failure{
+		Name:    IdTypeNotFound,
+		Message: fmt.Sprintf("type not found '%s'", typeName),
+	}
+}
+
+func NotEnoughValues(at string) *Failure {
+	return &Failure{
+		Name:    IdNotEnoughValues,
+		Message: fmt.Sprintf("not enough values for '%s' insertion", at),
+	}
+}
+
+func UnknownDriver(driver string) *Failure {
+	message := "empty driver"
+	if driver != "" {
+		message = fmt.Sprintf("unknown driver '%s'", driver)
+	}
+
+	return &Failure{
+		Name:    IdUnknownDriver,
+		Message: message,
+	}
+}
+
+func UndefinedValueOnSetter(setter string, key string) *Failure {
+	return &Failure{
+		Name:    IdUndefinedValueOnSetter,
+		Message: fmt.Sprintf("undefined value on setter '%s' on key '%s'", setter, key),
 	}
 }

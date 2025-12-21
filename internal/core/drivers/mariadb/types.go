@@ -1,8 +1,10 @@
 package mariadb
 
-import "salvadorsru/bob/internal/models/table"
+import (
+	"salvadorsru/bob/internal/core/drivers/driver"
+)
 
-var Types = table.NewTypes(table.Types{
+var Types = driver.NewTypes(driver.Map{
 	// Integers
 	Int:   "INT",
 	Int8:  "TINYINT",
@@ -19,13 +21,12 @@ var Types = table.NewTypes(table.Types{
 	String32: "VARCHAR(32)",
 	String64: "VARCHAR(64)",
 	// Other types
-	Text:      "TEXT",
-	Blob:      "BLOB",
-	Date:      "DATE",
-	Time:      "TIME",
-	Datetime:  "DATETIME",
-	Id:        "INT",
-	Boolean:   "BOOLEAN",
-	Current:   "TIMESTAMP",
-	Timestamp: "TIMESTAMP",
+	Text:     "TEXT",
+	Blob:     "BLOB",
+	Date:     "DATE",
+	Time:     "TIME",
+	Datetime: "DATETIME",
+	Id:       "INT",
+	Boolean:  "BOOLEAN",
+	Current:  "TIMESTAMP",
 })

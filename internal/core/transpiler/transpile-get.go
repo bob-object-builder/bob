@@ -2,141 +2,184 @@ package transpiler
 
 import (
 	"fmt"
-	"strings"
-
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
-	"salvadorsru/bob/internal/lib/value/array"
-	"salvadorsru/bob/internal/models/condition"
-	"salvadorsru/bob/internal/models/get"
+	"salvadorsru/bob/internal/lib/value"
+	"salvadorsru/bob/internal/model/get"
+	"strings"
 )
 
-func (t Transpiler) TranspileGet(g get.Get, isSubquery bool) (*failure.Failure, string) {
-	queryTemplate := "SELECT\n%s\nFROM %s%s%s%s%s%s%s"
+func TranspileSelection(s *get.Selection, alias string) string {
+	if s.From == "" || s.IsExpression {
+		return fmt.Sprintf("%s AS %s", s.Selected.Value, alias)
+	}
+
+	return fmt.Sprintf("%s.%s AS %s_%s", s.From, s.Selected.Value, s.From, s.Selected.Value)
+}
+
+func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
+	selected := value.NewArray[string]()
+	orders := value.NewArray[string]()
+
+	joinsError, joinsQueries, joinsSelections := g.Joins.ToSQL(g.Target)
+	if joinsError != nil {
+		return joinsError, ""
+	}
+
+	for _, joinSelection := range joinsSelections {
+		if joinSelection.IsExpression && joinSelection.Alias == "" {
+			return failure.MissingAliasForExpression, ""
+		}
+
+		g.Children.Push(get.Child{
+			Alias: joinSelection.Alias,
+			Value: &get.Selection{
+				IsExpression: joinSelection.IsExpression,
+				From:         joinSelection.From,
+				Selected: value.Token{
+					Type:  value.Text,
+					Value: joinSelection.Target,
+				},
+			},
+		})
+	}
+
+	for _, col := range g.Children {
+		switch v := col.Value.(type) {
+		case *get.Selection:
+			q := TranspileSelection(v, col.Alias)
+			selected.Push(formatter.Indent(q))
+
+		case *get.Get:
+			subErr, subSQL := TranspileGet(v, true)
+			if subErr != nil {
+				return subErr, ""
+			}
+			q := fmt.Sprintf("(\n%s\n) AS %s", formatter.IndentLines(subSQL), col.Alias)
+			selected.Push(formatter.IndentLines(q))
+
+		default:
+			selected.Push(formatter.Indent(col.Alias))
+		}
+	}
 
 	if !isSubquery {
-		queryTemplate += ";"
-	}
+		hasWildcard := false
+		var normalized []string
 
-	fieldsError, fields := t.transpileFields(g)
-	if fieldsError != nil {
-		return fieldsError, ""
-	}
-	joins, conditions, groups, having := t.collectJoinsAndConditionsAndHaving(g)
-
-	selectedString := formatter.IndentLines(strings.Join(*fields, ",\n"))
-	joinString := ""
-	if len(*joins) > 0 {
-		joinString = "\n" + formatter.IndentLines(strings.Join(*joins, "\n"))
-	}
-
-	conditionString := ""
-	if len(*conditions) > 0 {
-		var conditionEerror *failure.Failure
-		conditionEerror, conditionString = t.TranspileConditions(*conditions, false)
-		if conditionEerror != nil {
-			return conditionEerror, ""
-		}
-	}
-
-	groupString := ""
-	if len(*groups) > 0 {
-		groupString = "\nGROUP BY\n" + formatter.IndentLines(strings.Join(*groups, ",\n"))
-	}
-
-	havingString := ""
-	if len(*having) > 0 {
-		var conditionEerror *failure.Failure
-		conditionEerror, havingString = t.TranspileConditions(*having, true)
-		if conditionEerror != nil {
-			return conditionEerror, ""
-		}
-	}
-
-	limitString := ""
-	if g.Limit != "" {
-		limitString = "\nLIMIT " + g.Limit
-	}
-
-	offsetString := ""
-	if g.Offset != "" {
-		offsetString = "\nOFFSET " + g.Offset
-	}
-
-	return nil, fmt.Sprintf(
-		queryTemplate,
-		selectedString,
-		g.Target,
-		joinString,
-		conditionString,
-		groupString,
-		havingString,
-		limitString,
-		offsetString,
-	)
-}
-
-func (t Transpiler) transpileFields(g get.Get) (*failure.Failure, *array.Array[string]) {
-	fields := array.New[string]()
-
-	for field := range g.Selected.Range() {
-
-		if field.Key == field.Value || get.IsEveryField(field.Value) {
-
-			if get.IsEveryField(field.Value) {
-				field.Value = get.EveryField
+		for _, s := range *selected {
+			raw := strings.TrimSpace(strings.TrimLeft(s, "\t "))
+			if raw == "..." {
+				raw = "*"
+				s = formatter.Indent("*")
 			}
 
-			fields.Push(field.Value)
+			if raw == "*" {
+				if hasWildcard {
+					continue
+				}
+				hasWildcard = true
+			}
+
+			normalized = append(normalized, s)
+		}
+
+		if len(normalized) == 0 {
+			normalized = append(normalized, formatter.Indent("*"))
+		}
+
+		selected = value.NewArray[string]()
+		for _, s := range normalized {
+			selected.Push(s)
+		}
+	}
+
+	conditionsError, conditionString := TranspileCondition(&g.Conditions, false)
+	if conditionsError != nil {
+		return conditionsError, ""
+	}
+
+	var groupString string
+	if g.HasGroup {
+		groupString = TranspileGroup(&g.Group)
+
+		havingsError, havingString := TranspileCondition(&g.Conditions, true)
+		if havingsError != nil {
+			return havingsError, ""
+		}
+
+		if havingString != "" {
+			if !strings.HasSuffix(groupString, "\n") {
+				groupString += "\n"
+			}
+			groupString += havingString
+		}
+	}
+
+	for _, o := range g.Orders {
+		dir := strings.ToUpper(o.Direction)
+		var nullOrder string
+		if o.NullsFirst {
+			nullOrder = fmt.Sprintf("(%s.%s IS NOT NULL), %s.%s %s", g.Target, o.Target, g.Target, o.Target, dir)
 		} else {
-			fields.Push(fmt.Sprintf("%s AS %s", field.Value, field.Key))
+			nullOrder = fmt.Sprintf("(%s.%s IS NULL), %s.%s %s", g.Target, o.Target, g.Target, o.Target, dir)
+		}
+		orders.Push(formatter.Indent(nullOrder))
+	}
+
+	var ordersString string
+	if orders.Length() > 0 {
+		ordersString = orders.Join("\n")
+		ordersString = "ORDER BY\n" + ordersString
+	}
+
+	if isSubquery && len(*selected) != 1 {
+		return failure.SubqueryMustBeSingleColumn, ""
+	}
+
+	var sb strings.Builder
+
+	sb.WriteString("SELECT\n")
+	sb.WriteString(selected.Join(",\n"))
+	sb.WriteString("\n")
+
+	if g.Target != "" && !strings.Contains(joinsQueries, "\nFROM ") && !strings.HasPrefix(strings.TrimSpace(joinsQueries), "FROM ") {
+		sb.WriteString("FROM ")
+		sb.WriteString(g.Target)
+		sb.WriteString("\n")
+	}
+
+	addClause := func(clause string) {
+		if clause == "" {
+			return
+		}
+		trimmed := strings.TrimPrefix(clause, "\n")
+		if sb.Len() > 0 && !strings.HasSuffix(sb.String(), "\n") {
+			sb.WriteString("\n")
+		}
+		sb.WriteString(trimmed)
+		if !strings.HasSuffix(trimmed, "\n") {
+			sb.WriteString("\n")
 		}
 	}
 
-	if fields.Length() == 0 {
-		fields.Push(get.EveryField)
+	addClause(joinsQueries)
+	addClause(conditionString)
+
+	if groupString != "" {
+		addClause(groupString)
 	}
 
-	for _, sub := range g.Subqueries {
-		err, sql := t.TranspileGet(sub, true)
-		if err != nil {
-			return err, nil
-		}
-		fields.Push(
-			fmt.Sprintf("(\n%s\n) AS %s", formatter.IndentLines(sql), sub.Alias),
-		)
+	if ordersString != "" {
+		addClause(ordersString + "\n")
 	}
 
-	for _, join := range g.Joins {
-		for field := range join.Selected.Range() {
-			alias := field.Key
-			if field.Value == field.Key {
-				alias = fmt.Sprintf("%s_%s", join.Target, field.Value)
-			}
-			fields.Push(fmt.Sprintf("%s AS %s", field.Value, alias))
-		}
+	if !isSubquery {
+		finalSQL := strings.TrimRight(sb.String(), "\n ")
+		finalSQL = finalSQL + ";"
+		return nil, finalSQL
 	}
 
-	return nil, fields
-}
-
-func (t Transpiler) collectJoinsAndConditionsAndHaving(g get.Get) (
-	*array.Array[string],
-	*array.Array[condition.Condition],
-	*array.Array[string],
-	*array.Array[condition.Condition],
-) {
-	joins := array.New[string]()
-	conditions := array.New(g.Conditions...)
-	groups := array.New(g.Groups...)
-	having := array.New(g.Having...)
-
-	for _, join := range g.Joins {
-		joins.Push(t.TranspileLeftJoin(g.Target, join))
-		conditions.Push(join.Conditions...)
-		having.Push(join.Having...)
-		groups.Push(join.Groups...)
-	}
-
-	return joins, conditions, groups, having
+	finalSQL := strings.TrimRight(sb.String(), "\n ")
+	return nil, finalSQL
 }

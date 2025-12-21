@@ -2,151 +2,140 @@ package transpiler
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/core/drivers/driver"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
-	"salvadorsru/bob/internal/lib/value/array"
-	"salvadorsru/bob/internal/models/literal"
-	"salvadorsru/bob/internal/models/table"
-	"strings"
+	"salvadorsru/bob/internal/lib/value"
+	"salvadorsru/bob/internal/model/table"
 )
 
-func TranspileIndex(table, column string) string {
-	return fmt.Sprintf("CREATE INDEX idx_%s_%s ON %s(%s);", table, column, table, column)
-}
-
-func (t Transpiler) TranspileReference(ref table.Reference) (*failure.Failure, *table.Column, string) {
-	referencedTable := ref.Table
-	referencedColumn := ref.Column
-	columnName := fmt.Sprintf("%s_%s", referencedTable, referencedColumn)
-	foreignKey := fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", columnName, referencedTable, referencedColumn)
-
-	tb := t.Tables.Get(referencedTable)
-	if tb == nil {
-		return failure.UndefinedReferenceTable(referencedTable), nil, ""
+func (t *Transpiler) TranspileTable(tb *table.Table) (*failure.Failure, string) {
+	if tb.Name == "" {
+		return failure.TableNameIsEmpty, ""
 	}
 
-	col := tb.Columns.Get(referencedColumn)
-	if col == nil {
-		return failure.UndefinedReferencedColumn(referencedColumn, referencedTable), nil, ""
-	}
+	sql := "CREATE TABLE %s (\n%s\n);"
 
-	column := table.Column{
-		Name:     columnName,
-		Type:     col.Type,
-		Optional: ref.Optional,
-		Default:  ref.Default,
-	}
+	columns := value.NewArray[string]()
+	references := value.NewArray[string]()
+	indexes := value.NewArray[string]()
+	unique := value.NewArray[string]()
+	primaries := value.NewArray[string]()
 
-	onUpdate := array.New[string]()
-	if ref.OnDeleteCascade {
-		onUpdate.Push("ON DELETE CASCADE")
-	}
-
-	if ref.OnUpdateCascade {
-		onUpdate.Push("ON UPDATE CASCADE")
-	}
-
-	if onUpdate.Length() > 0 {
-		foreignKey += "\n" + formatter.IndentLines(strings.Join(*onUpdate, "\n"), 2)
-	}
-
-	return nil, &column, foreignKey
-}
-
-func (t *Transpiler) TranspileColumn(col table.Column) (*failure.Failure, string) {
-	if col.Type == "" {
-		return failure.UndefinedTypeForColumn(col.GetName()), ""
-	}
-
-	typeError, dbType := t.GetType(col.Type)
-	if typeError != nil {
-		return typeError, ""
-	}
-
-	query := fmt.Sprintf("%s %s", col.GetName(), dbType)
-
-	if col.Primary {
-		query += " PRIMARY KEY"
-	}
-
-	if col.AutoIncrement {
-		switch t.SelectedDriver {
-		case "sqlite":
-			query += " AUTOINCREMENT"
-		case "mysql":
-			query += " AUTO_INCREMENT"
+	for v := range tb.References.Range() {
+		r := v.Value
+		column := r.Column
+		if column == "" {
+			column = "id"
 		}
-	}
+		columnsName := fmt.Sprintf("%s_%s", r.Target, column)
+		ref := fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", columnsName, r.Target, column)
+		ref = formatter.Indent(ref)
 
-	if !col.Optional {
-		query += " NOT NULL"
-	}
-
-	if col.Default != "" {
-		query += fmt.Sprintf(" DEFAULT %s", literal.GetLiteral(col.Default))
-	}
-
-	return nil, query
-}
-
-func (t *Transpiler) TranspileTable(tb table.Table) (*failure.Failure, array.Array[string]) {
-	var (
-		columns = array.New[string]()
-		indexes = array.New[string]()
-		uniques = array.New[string]()
-		output  = array.New[string]()
-	)
-
-	tableName := tb.GetName()
-
-	for column := range tb.Columns.Range() {
-		col := column.Value
-		colName := col.GetName()
-
-		if col.Index {
-			indexes.Push(TranspileIndex(tableName, colName))
+		referecedTb := *t.tables.Get(r.Target)
+		if referecedTb == nil {
+			return failure.InvalidTableColumn, ""
 		}
 
-		if col.Unique {
-			uniques.Push(colName)
+		referencedColumn := referecedTb.Columns.Get(column)
+		if referencedColumn == nil {
+			return failure.InvalidTableColumn, ""
 		}
 
-		columnError, colSQL := t.TranspileColumn(col)
-		if columnError != nil {
-			return columnError, nil
-		}
+		referencedColumn.Name = columnsName
+		referencedColumn.IsAutoIncrement = false
+		referencedColumn.IsPrimary = false
+		referencedColumn.IsReference = true
 
-		columns.Push(formatter.Indent(colSQL))
+		tb.Columns.Set(columnsName, *referencedColumn)
+		references.Push(ref)
 	}
 
-	for _, ref := range tb.References {
-		err, colRef, fkDef := t.TranspileReference(ref)
-		if err != nil {
-			return err, nil
+	for v := range tb.Columns.Range() {
+		c := v.Value
+
+		tp := t.Driver.Types.Get(c.Type)
+		if tp == "" {
+			return failure.TypeNotFound(c.Type), ""
 		}
 
-		err, colSQL := t.TranspileColumn(*colRef)
-		if err != nil {
-			return err, nil
+		if c.Type == string(driver.Id) && !c.IsReference {
+			c.IsAutoIncrement = true
+			c.IsPrimary = true
 		}
 
-		columns.Push(formatter.Indent(colSQL))
-		columns.Push(formatter.Indent(fkDef))
+		if c.Type == string(driver.Current) {
+			c.IsCurrent = true
+		}
+
+		col := fmt.Sprintf("%s %s", c.Name, tp)
+
+		if t.Driver.Motor == driver.SQLite {
+			if c.IsPrimary {
+				col += " PRIMARY KEY"
+			}
+		} else {
+			if c.IsPrimary {
+				primaries.Push(c.Name)
+			}
+		}
+
+		if c.IsAutoIncrement {
+
+			autoIncrementError, autoIncrement := t.Driver.Variations.MustGet(string(driver.AutoIncrement))
+
+			if autoIncrementError != nil {
+				return autoIncrementError, ""
+			}
+
+			if autoIncrement != "" {
+				col += " " + autoIncrement
+			}
+
+		}
+
+		if c.IsCurrent {
+			c.Default = "CURRENT_TIMESTAMP"
+		}
+
+		if c.IsUnique {
+			unique.Push(c.Name)
+		}
+
+		if c.Default != "" {
+			col += fmt.Sprintf(" DEFAULT %s", c.Default)
+		}
+
+		if c.IsIndex {
+			indexes.Push(
+				fmt.Sprintf("CREATE INDEX idx_%s_%s ON %s(%s);", tb.Name, c.Name, tb.Name, c.Name),
+			)
+		}
+
+		col = formatter.Indent(col)
+		columns.Push(col)
 	}
 
-	if uniques.Length() > 0 {
-		columns.Push(formatter.Indent(fmt.Sprintf("UNIQUE(%s)", strings.Join(*uniques, ", "))))
+	columns.Push(*references...)
+
+	if primaries.Length() > 0 {
+		primaryKey := fmt.Sprintf("PRIMARY KEY (%s)", primaries.Join(", "))
+		primaryKey = formatter.Indent(primaryKey)
+		columns.Push(primaryKey)
 	}
 
-	output.Push(fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s (\n%s\n);",
-		tableName,
-		strings.Join(*columns, ",\n"),
-	))
+	output := columns.Join(",\n")
+	output = fmt.Sprintf(sql, tb.Name, output)
 
 	if indexes.Length() > 0 {
-		output.Push(*indexes...)
+		output += "\n\n" + indexes.Join("\n")
 	}
 
-	return nil, *output
+	if unique.Length() > 0 {
+		columns.Push(
+			fmt.Sprintf("UNIQUE(%s)", unique.Join(", ")),
+		)
+	}
+
+	return nil, output
 }

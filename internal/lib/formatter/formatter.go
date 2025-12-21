@@ -1,32 +1,18 @@
 package formatter
 
-import (
-	"strings"
-	"unicode"
-)
+import "strings"
 
-func ToSnakeCase(str string) string {
-	var result strings.Builder
-	runes := []rune(str)
+func ToReferenceCase(str string) string {
+	parts := strings.Split(str, "->")
 
-	for i, r := range runes {
-		if unicode.IsUpper(r) {
-			if i > 0 {
-				prev := runes[i-1]
-				if unicode.IsLower(prev) || unicode.IsDigit(prev) ||
-					(i+1 < len(runes) && unicode.IsLower(runes[i+1]) && unicode.IsUpper(prev)) {
-					result.WriteRune('_')
-				}
-			}
-			result.WriteRune(unicode.ToLower(r))
-		} else if r == ' ' || r == '.' {
-			result.WriteRune('_')
-		} else {
-			result.WriteRune(r)
+	for i, part := range parts {
+		if len(part) > 0 && part[0] >= 'A' && part[0] <= 'Z' {
+			part = strings.ToLower(part[:1]) + part[1:]
 		}
+		part = strings.ReplaceAll(part, ".", "_")
+		parts[i] = part
 	}
-
-	return result.String()
+	return strings.Join(parts, ".")
 }
 
 func Indent(str string, size ...int) string {
@@ -49,20 +35,4 @@ func IndentLines(str string, size ...int) string {
 		lines[i] = indent + line
 	}
 	return strings.Join(lines, "\n")
-}
-
-func NormalizeString(s string) string {
-	if s == "" {
-		return s
-	}
-
-	if s[0] == '"' {
-		s = "'" + s[1:]
-	}
-
-	if len(s) > 0 && s[len(s)-1] == '"' {
-		s = s[:len(s)-1] + "'"
-	}
-
-	return s
 }

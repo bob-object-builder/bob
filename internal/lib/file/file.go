@@ -94,7 +94,7 @@ func WriteFiles(files []File, output string, outputIsFolder bool) {
 	}
 }
 
-func FindBobFiles(directory string) (error, []string) {
+func FindBobFiles(directory string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -105,7 +105,7 @@ func FindBobFiles(directory string) (error, []string) {
 		}
 		return nil
 	})
-	return err, files
+	return files, err
 }
 
 func ReadFiles(fileList []string) []File {
