@@ -14,6 +14,10 @@ func TranspileSelection(s *get.Selection, alias string) string {
 		return fmt.Sprintf("%s AS %s", s.Selected.Value, alias)
 	}
 
+	if alias != "" {
+		return fmt.Sprintf("%s.%s AS %s", s.From, s.Selected.Value, alias)
+	}
+
 	return fmt.Sprintf("%s.%s AS %s_%s", s.From, s.Selected.Value, s.From, s.Selected.Value)
 }
 
