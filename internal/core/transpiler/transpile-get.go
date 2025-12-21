@@ -14,6 +14,10 @@ func TranspileSelection(s *get.Selection, alias string) string {
 		return fmt.Sprintf("%s AS %s", s.Selected.Value, alias)
 	}
 
+	if alias != "" {
+		return fmt.Sprintf("%s.%s AS %s", s.From, s.Selected.Value, alias)
+	}
+
 	return fmt.Sprintf("%s.%s AS %s_%s", s.From, s.Selected.Value, s.From, s.Selected.Value)
 }
 
@@ -21,7 +25,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 	selected := value.NewArray[string]()
 	orders := value.NewArray[string]()
 
-	joinsError, joinsQueries, joinsSelections := g.Joins.ToSQL(g.Target)
+	joinsError, joinsQueries, joinsSelections := TranspileJoin(&g.Joins, g.Target)
 	if joinsError != nil {
 		return joinsError, ""
 	}
@@ -56,10 +60,10 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 				return subErr, ""
 			}
 			q := fmt.Sprintf("(\n%s\n) AS %s", formatter.IndentLines(subSQL), col.Alias)
-			selected.Push(formatter.IndentLines(q))
+			selected.Push(formatter.IndentLines(formatter.ToReferenceCase(q)))
 
 		default:
-			selected.Push(formatter.Indent(col.Alias))
+			selected.Push(formatter.Indent(formatter.ToReferenceCase(col.Alias)))
 		}
 	}
 

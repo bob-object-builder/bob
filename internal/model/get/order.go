@@ -3,7 +3,7 @@ package get
 import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/core/kw"
-	"strings"
+	"salvadorsru/bob/internal/lib/formatter"
 )
 
 type Order struct {
@@ -31,7 +31,7 @@ func (o *Order) Parse(token string) *failure.Failure {
 			return failure.UndefinedOrderTarget
 		}
 
-		o.Target = strings.ToLower(token)
+		o.Target = formatter.ToReferenceCase(token)
 		return nil
 	}
 
