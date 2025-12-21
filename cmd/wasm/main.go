@@ -26,7 +26,7 @@ func bob(this js.Value, args []js.Value) any {
 			return js.ValueOf(map[string]any{
 				"error": map[string]any{
 					"name":    transpileError.Name,
-					"message": transpileError.Error(),
+					"message": transpileError.Message,
 				},
 				"value": nil,
 			})
@@ -35,8 +35,8 @@ func bob(this js.Value, args []js.Value) any {
 		return js.ValueOf(map[string]any{
 			"error": nil,
 			"value": map[string]any{
-				"tables":  sliceToJSArray(tables.Get()),
-				"actions": sliceToJSArray(actions.Get()),
+				"tables":  sliceToJSArray(tables),
+				"actions": sliceToJSArray(actions),
 			},
 		})
 	})

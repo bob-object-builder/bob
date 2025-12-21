@@ -10,6 +10,7 @@ import (
 	"salvadorsru/bob/internal/lib/cli"
 	"salvadorsru/bob/internal/lib/console"
 	"salvadorsru/bob/internal/lib/file"
+	"salvadorsru/bob/internal/lib/value"
 	"strings"
 )
 
@@ -34,13 +35,13 @@ func panic(asJson bool, asDaemon bool, err *failure.Failure) {
 		data := map[string]map[string]string{
 			"error": {
 				"type":    err.Name,
-				"message": strings.TrimSpace(err.Error()),
+				"message": strings.TrimSpace(err.Message),
 			},
 		}
 		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
 		console.Log(string(jsonBytes))
 	} else {
-		console.Panic(err.Error())
+		console.Panic(err.Message)
 	}
 
 	if asDaemon {
@@ -51,14 +52,14 @@ func panic(asJson bool, asDaemon bool, err *failure.Failure) {
 	os.Exit(1)
 }
 
-func printResult(asJson bool, asDaemon bool, tables *transpiler.TranspiledTable, actions *transpiler.TranspiledActions) {
+func printResult(asJson bool, asDaemon bool, tables *value.Array[string], actions *value.Array[string]) {
 	if asJson {
 		data := map[string]any{}
 		if tables != nil {
-			data["tables"] = tables.Get()
+			data["tables"] = tables
 		}
 		if actions != nil {
-			data["actions"] = actions.Get()
+			data["actions"] = actions
 		}
 		jsonBytes, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
@@ -70,11 +71,11 @@ func printResult(asJson bool, asDaemon bool, tables *transpiler.TranspiledTable,
 
 	console.Success()
 	if tables != nil {
-		console.Log(tables.ToString())
+		console.Log(tables.Join("\n\n"))
 	}
 	if actions != nil {
 		console.Log()
-		console.Log(actions.ToString())
+		console.Log(actions.Join("\n\n"))
 	}
 }
 
@@ -82,14 +83,20 @@ func main() {
 	console.Clear()
 	argsErr, args := cli.ProcessArgs(version)
 	if argsErr != nil {
-		panic(args.AsJson, args.AsDaemon, failure.MalformedArgs)
+		asJson := false
+		asDaemon := false
+		if args != nil {
+			asJson = args.AsJson
+			asDaemon = args.AsDaemon
+		}
+		panic(asJson, asDaemon, failure.MalformedArgs)
 	}
 
 	if args.AsDaemon {
 		handleDaemonQuery(*args)
 	} else if args.Query != "" {
 		handleDirectQuery(*args)
-	} else {
+	} else if args.Input != "" {
 		handleInputFiles(*args)
 	}
 }
@@ -110,7 +117,7 @@ func handleDaemonQuery(args cli.Args) {
 			if query != "" {
 				transpileErr, tables, actions := transpiler.Transpile(args.Driver, query)
 				panic(args.AsJson, args.AsDaemon, transpileErr)
-				printResult(args.AsJson, args.AsDaemon, tables, actions)
+				printResult(args.AsJson, args.AsDaemon, &tables, &actions)
 			}
 			console.Log("__END__")
 			queryBuilder.Reset()
@@ -131,13 +138,13 @@ func handleDirectQuery(args cli.Args) {
 	panic(args.AsJson, args.AsDaemon, transpileErr)
 
 	if args.Output == "" {
-		printResult(args.AsJson, args.AsDaemon, tables, actions)
+		printResult(args.AsJson, args.AsDaemon, &tables, &actions)
 		return
 	}
 
 	files := []file.File{
-		{Ref: "actions.sql", Content: actions.ToString()},
-		{Ref: "tables.sql", Content: tables.ToString()},
+		{Ref: "actions.sql", Content: actions.Join("\n\n")},
+		{Ref: "tables.sql", Content: tables.Join("\n\n")},
 	}
 	file.WriteFiles(files, args.Output, args.OutputIsFolder)
 	console.Success("transpiled to " + args.Output)
@@ -168,7 +175,7 @@ func handleInputFiles(args cli.Args) {
 
 		if args.Output != "" {
 			fileName := strings.TrimSuffix(filepath.Base(res.Ref), ".bob") + ".sql"
-			outputFiles = append(outputFiles, file.File{Ref: fileName, Content: action.ToString()})
+			outputFiles = append(outputFiles, file.File{Ref: fileName, Content: action.Join("\n\n")})
 		}
 
 		combinedInput.WriteString(res.Content)
@@ -183,11 +190,11 @@ func processCombined(args cli.Args, input string, files []file.File) {
 	panic(args.AsJson, args.AsDaemon, transpileErr)
 
 	if args.Output == "" {
-		printResult(args.AsJson, args.AsDaemon, tables, actions)
+		printResult(args.AsJson, args.AsDaemon, &tables, &actions)
 		return
 	}
 
-	files = append(files, file.File{Ref: "tables.sql", Content: tables.ToString()})
+	files = append(files, file.File{Ref: "tables.sql", Content: tables.Join("\n\n")})
 	file.WriteFiles(files, args.Output, args.OutputIsFolder)
 	console.Success("transpiled to " + args.Output)
 }

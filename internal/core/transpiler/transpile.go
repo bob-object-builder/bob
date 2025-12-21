@@ -1,34 +1,43 @@
 package transpiler
 
 import (
-	"salvadorsru/bob/internal/core/driver"
+	"salvadorsru/bob/internal/core/drivers/driver"
+	"salvadorsru/bob/internal/core/drivers/mariadb"
+	"salvadorsru/bob/internal/core/drivers/postgres"
+	"salvadorsru/bob/internal/core/drivers/sqlite"
 	"salvadorsru/bob/internal/core/failure"
-	"salvadorsru/bob/internal/core/lexer"
+	"salvadorsru/bob/internal/lib/value"
 )
 
-func Transpile(motor string, query string) (*failure.Failure, *TranspiledTable, *TranspiledActions) {
-	driverError, driver := driver.GetDriver(motor)
+func Transpile(driverName string, query string) (*failure.Failure, value.Array[string], value.Array[string]) {
+	driverError, driver := GetDriver(driverName)
 	if driverError != nil {
 		return driverError, nil, nil
 	}
 
-	l := lexer.New(*driver)
-	parseError, tables, actions := l.Parse(query)
-
-	if parseError != nil {
-		return parseError, nil, nil
+	t := &Transpiler{
+		Driver: *driver,
 	}
 
-	t := Transpiler{
-		Tables:  *tables,
-		Actions: *actions,
-		Driver:  *driver,
+	error, tables, actions := t.Transpile(query)
+	if error != nil {
+		return error, nil, nil
 	}
 
-	trampileError, transpiledTables, transpiledActions := t.Transpile()
-	if trampileError != nil {
-		return trampileError, nil, nil
-	}
+	return nil, *tables, *actions
+}
 
-	return nil, transpiledTables, transpiledActions
+func GetDriver(driverName string) (*failure.Failure, *driver.Driver) {
+	switch driver.Motor(driverName) {
+	case driver.SQLite:
+		return nil, &sqlite.Driver
+	case driver.MariaDB:
+		return nil, &mariadb.Driver
+	case driver.MySQL:
+		return nil, &mariadb.Driver
+	case driver.Postgres:
+		return nil, &postgres.Driver
+	default:
+		return failure.UnknownDriver(driverName), nil
+	}
 }

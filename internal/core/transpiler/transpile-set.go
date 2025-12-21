@@ -4,31 +4,22 @@ import (
 	"fmt"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
-	"salvadorsru/bob/internal/lib/value/array"
-	"salvadorsru/bob/internal/models/set"
-	"strings"
+	"salvadorsru/bob/internal/lib/value"
+	"salvadorsru/bob/internal/model/set"
 )
 
-func (t Transpiler) TranspileSet(s set.Set) (*failure.Failure, string) {
-	query := "UPDATE \n%s\nSET\n%s%s;"
+func TranspileSet(s *set.Set) (*failure.Failure, string) {
+	sql := "UPDATE %s\nSET\n%s%s;"
+	fields := value.NewArray[string]()
 
-	conditionString := ""
-	var conditionError *failure.Failure
-	conditionError, conditionString = t.TranspileConditions(s.Conditions, false)
-	if conditionError != nil {
-		return conditionError, ""
+	for v := range s.Values.Range() {
+		fields.Push(formatter.Indent(fmt.Sprintf("%s = %s", v.Key, v.Value)))
 	}
 
-	setsList := array.New[string]()
-	for set := range s.Values.Range() {
-		setsList.Push(fmt.Sprintf("%s = %s", set.Key, set.Value))
+	conditionsError, conditions := TranspileCondition(&s.Conditions, false)
+	if conditionsError != nil {
+		return conditionsError, ""
 	}
 
-	sets := formatter.IndentLines(strings.Join(*setsList, ",\n"))
-
-	return nil, fmt.Sprintf(query,
-		formatter.Indent(s.Target),
-		sets,
-		conditionString,
-	)
+	return nil, fmt.Sprintf(sql, s.Target, fields.Join(",\n"), conditions)
 }

@@ -1,10 +1,9 @@
 package transpiler
 
 import (
-	"fmt"
-	"salvadorsru/bob/internal/models/drop"
+	"salvadorsru/bob/internal/model/drop"
 )
 
-func (t Transpiler) TranspileDrop(d drop.Drop) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s;", d.Target)
+func TranspileDrop(d *drop.Drop) string {
+	return "DROP TABLE IF EXISTS " + d.Target + ";"
 }

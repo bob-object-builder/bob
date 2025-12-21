@@ -2,26 +2,47 @@ package transpiler
 
 import (
 	"fmt"
+	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
-	"salvadorsru/bob/internal/lib/value/array"
-	"salvadorsru/bob/internal/models/insert"
-	"strings"
+	"salvadorsru/bob/internal/lib/value"
+	"salvadorsru/bob/internal/model/insert"
 )
 
-func (t Transpiler) TranspileInsert(i insert.Insert) string {
-	query := "INSERT INTO\n"
-	query += formatter.Indent("%s(%s)\nVALUES\n%s;")
-	columns := strings.Join(i.Columns, ", ")
-	accumulatedValues := array.New[string]()
+func TranspileInsert(n *insert.Insert) (*failure.Failure, string) {
+	selected := formatter.Indent(
+		fmt.Sprintf("(%s)", n.Fields.Join(", ")),
+	)
 
-	for _, values := range i.Values {
-		accumulatedValues.Push(
-			fmt.Sprintf(
-				formatter.Indent("(%s)"),
-				strings.Join(values, ", "),
-			),
-		)
+	values := value.NewArray[string]()
+
+	for _, v := range n.Values {
+		row := v.Join(", ")
+
+		if n.IsBulk {
+			if v.Length() < n.Fields.Length() {
+				return failure.NotEnoughValues(n.Target), ""
+			}
+
+			values.Push(
+				formatter.Indent(fmt.Sprintf("(%s)", row)),
+			)
+		} else {
+			values.Push(
+				formatter.Indent(row),
+			)
+		}
 	}
 
-	return fmt.Sprintf(query, i.Target, columns, strings.Join(*accumulatedValues, ",\n"))
+	var valuesString string
+	var sql string
+
+	if n.IsBulk {
+		valuesString = values.Join(",\n")
+		sql = "INSERT INTO %s\n%s\nVALUES\n%s;"
+	} else {
+		valuesString = values.Join(",\n")
+		sql = "INSERT INTO %s\n%s\nVALUES (\n%s\n);"
+	}
+
+	return nil, fmt.Sprintf(sql, n.Target, selected, valuesString)
 }

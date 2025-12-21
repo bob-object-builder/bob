@@ -1,8 +1,6 @@
 package formatter
 
-import (
-	"strings"
-)
+import "strings"
 
 func ToReferenceCase(str string) string {
 	parts := strings.Split(str, "->")
@@ -37,20 +35,4 @@ func IndentLines(str string, size ...int) string {
 		lines[i] = indent + line
 	}
 	return strings.Join(lines, "\n")
-}
-
-func NormalizeString(s string) string {
-	if s == "" {
-		return s
-	}
-
-	if s[0] == '"' {
-		s = "'" + s[1:]
-	}
-
-	if len(s) > 0 && s[len(s)-1] == '"' {
-		s = s[:len(s)-1] + "'"
-	}
-
-	return s
 }

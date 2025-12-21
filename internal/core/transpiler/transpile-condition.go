@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
-	"salvadorsru/bob/internal/lib/value/array"
-	"salvadorsru/bob/internal/models/condition"
+	"salvadorsru/bob/internal/lib/value"
+	"salvadorsru/bob/internal/model/condition"
 	"strings"
 )
 
-func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], isGrouped bool) (*failure.Failure, string) {
-	if len(conds) == 0 {
+func TranspileCondition(cs *condition.Conditions, isGrouped bool) (*failure.Failure, string) {
+	if len(cs.Conditions) == 0 {
 		return nil, ""
 	}
 
-	var conditions = array.New[string]()
+	var conditions = value.NewArray[string]()
 
-	for i, c := range conds {
+	for i, c := range cs.Conditions {
 		var conditionKey string
 		if i > 0 {
-			if c.Condition == condition.If {
+			if c.Condition == "if" {
 				conditionKey = "AND"
 			} else {
 				conditionKey = "OR"
@@ -31,22 +31,22 @@ func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], 
 		}
 
 		if c.And.Length() == 0 && c.Else.Length() == 0 {
-			return failure.ConditionValidation(c.Table, c.Target), ""
+			return failure.ConditionValidation(c.From, c.Target), ""
 		}
 
 		var operation string
 		if strings.Contains(c.Target, ".") {
 			operation = fmt.Sprintf("%s %s", c.Target, c.Comparator)
 		} else {
-			operation = fmt.Sprintf("%s.%s %s", c.Table, c.Target, c.Comparator)
+			operation = fmt.Sprintf("%s.%s %s", c.From, c.Target, c.Comparator)
 		}
 
-		and := strings.Join(c.And, fmt.Sprintf("\nAND %s ", operation))
+		and := c.And.Join(fmt.Sprintf("\nAND %s ", operation))
 		and = fmt.Sprintf("%s %s", operation, and)
 
 		var or string
 		if len(c.Else) > 0 {
-			or = strings.Join(c.Else, fmt.Sprintf("\nOR %s ", operation))
+			or = c.Else.Join(fmt.Sprintf("\nOR %s ", operation))
 			or = fmt.Sprintf("\nOR %s %s", operation, or)
 		}
 
@@ -56,8 +56,8 @@ func (t Transpiler) TranspileConditions(conds array.Array[condition.Condition], 
 
 	head := "\nWHERE\n"
 	if isGrouped {
-		head = "\nHAVING\n"
+		head = "HAVING\n"
 	}
 
-	return nil, head + formatter.IndentLines(strings.Join(*conditions, "\n"))
+	return nil, head + formatter.IndentLines(conditions.Join("\n"))
 }
