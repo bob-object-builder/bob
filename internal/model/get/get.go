@@ -17,6 +17,7 @@ type Get struct {
 	Havings    condition.Conditions
 	Joins      join.Joins
 	Orders     value.Array[Order]
+	Limit      Limit
 }
 
 func NewGet() *Get {
@@ -36,6 +37,9 @@ func (g *Get) Merge(i any) *failure.Failure {
 		return nil
 	case *Order:
 		g.Orders.Push(*v)
+		return nil
+	case *Limit:
+		g.Limit = *v
 		return nil
 	case *condition.Condition:
 		if g.HasGroup {

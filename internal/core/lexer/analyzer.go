@@ -49,6 +49,15 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 
 		return nil
 
+	case kw.Limit:
+		latest := *l.stack.GetLast()
+
+		if _, ok := latest.(*get.Get); ok {
+			l.stack.Push(get.NewLimit())
+		}
+
+		return nil
+
 	case kw.If, kw.Or:
 		latest := *l.stack.GetLast()
 
@@ -161,6 +170,17 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 		}
 
 	case *get.Order:
+		if isNewLine() {
+			if error := l.stack.Merge(); error != nil {
+				return error
+			}
+		}
+
+		if err := v.Parse(word); err != nil {
+			return err
+		}
+
+	case *get.Limit:
 		if isNewLine() {
 			if error := l.stack.Merge(); error != nil {
 				return error

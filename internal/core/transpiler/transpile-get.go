@@ -178,6 +178,14 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 		addClause(ordersString + "\n")
 	}
 
+	if g.Limit.Limit != "" {
+		sb.WriteString(fmt.Sprintf("LIMIT %s", g.Limit.Limit))
+		if g.Limit.Offset != "" {
+			sb.WriteString(fmt.Sprintf(" OFFSET %s", g.Limit.Offset))
+		}
+		sb.WriteString("\n")
+	}
+
 	if !isSubquery {
 		finalSQL := strings.TrimRight(sb.String(), "\n ")
 		finalSQL = finalSQL + ";"

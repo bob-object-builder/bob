@@ -9,6 +9,7 @@ const (
 	Raw             string = "raw"
 	Drop            string = "drop"
 	Set             string = "set"
+	Limit           string = "limit"
 	Join            string = "->"
 	OpenContext     string = "{"
 	CloseContext    string = "}"
