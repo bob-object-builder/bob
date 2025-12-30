@@ -60,7 +60,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 				return subErr, ""
 			}
 			q := fmt.Sprintf("(\n%s\n) AS %s", formatter.IndentLines(subSQL), col.Alias)
-			selected.Push(formatter.IndentLines(formatter.ToReferenceCase(q)))
+			selected.Push(formatter.IndentLines(q))
 
 		default:
 			selected.Push(formatter.Indent(formatter.ToReferenceCase(col.Alias)))
@@ -193,5 +193,6 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 	}
 
 	finalSQL := strings.TrimRight(sb.String(), "\n ")
+
 	return nil, finalSQL
 }
