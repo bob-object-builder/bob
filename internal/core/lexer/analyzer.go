@@ -155,8 +155,8 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 		}
 
 		if isNewLine() {
-			if error := l.stack.Merge(); error != nil {
-				return error
+			if err := l.stack.Merge(); err != nil {
+				return err
 			}
 		}
 
@@ -164,15 +164,15 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 		v.Parse(word)
 
 		if isNewLine() {
-			if error := l.stack.Merge(); error != nil {
-				return error
+			if err := l.stack.Merge(); err != nil {
+				return err
 			}
 		}
 
 	case *get.Order:
 		if isNewLine() {
-			if error := l.stack.Merge(); error != nil {
-				return error
+			if err := l.stack.Merge(); err != nil {
+				return err
 			}
 		}
 
@@ -182,8 +182,8 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 
 	case *get.Limit:
 		if isNewLine() {
-			if error := l.stack.Merge(); error != nil {
-				return error
+			if err := l.stack.Merge(); err != nil {
+				return err
 			}
 		}
 
@@ -228,8 +228,8 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 
 	case *get.Child:
 		if isNewLine() {
-			if error := l.stack.Merge(); error != nil {
-				return error
+			if err := l.stack.Merge(); err != nil {
+				return err
 			}
 		}
 
@@ -254,13 +254,13 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 
 	case *join.Selection:
 		if isNewLine() {
-			if error := l.stack.Merge(); error != nil {
-				return error
+			if err := l.stack.Merge(); err != nil {
+				return err
 			}
 		}
 
-		if error := v.Parse(token); error != nil {
-			return error
+		if err := v.Parse(token); err != nil {
+			return err
 		}
 
 	case *remove.Delete:
@@ -278,8 +278,8 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 		v.Parse(token)
 
 	case *set.Set:
-		if error := v.Parse(token); error != nil {
-			return error
+		if err := v.Parse(token); err != nil {
+			return err
 		}
 
 	}
