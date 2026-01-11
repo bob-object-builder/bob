@@ -25,7 +25,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 	selected := value.NewArray[string]()
 	orders := value.NewArray[string]()
 
-	joinsError, joinsQueries, joinsSelections := TranspileJoin(&g.Joins, g.Target)
+	joinsError, joinsQueries, joinsSelections, joinsConditions := TranspileJoin(&g.Joins, g.Target)
 	if joinsError != nil {
 		return joinsError, ""
 	}
@@ -46,6 +46,11 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 				},
 			},
 		})
+
+	}
+
+	for _, joinCondition := range joinsConditions {
+		g.Conditions.Push(joinCondition)
 	}
 
 	for _, col := range g.Children {

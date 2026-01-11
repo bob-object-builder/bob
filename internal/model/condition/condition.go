@@ -56,6 +56,11 @@ func (c *Condition) Parse(token value.Token) *failure.Failure {
 		c.ValueList = &c.And
 	}
 
-	c.ValueList.Push(formatter.ToReferenceCase(v))
+	if token.Type == value.Key {
+		c.ValueList.Push(formatter.ToReferenceCase(v))
+	} else {
+		c.ValueList.Push(v)
+	}
+
 	return nil
 }

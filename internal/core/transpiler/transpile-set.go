@@ -21,5 +21,5 @@ func TranspileSet(s *set.Set) (*failure.Failure, string) {
 		return conditionsError, ""
 	}
 
-	return nil, fmt.Sprintf(sql, s.Target, fields.Join(",\n"), conditions)
+	return nil, fmt.Sprintf(sql, formatter.ToReferenceCase(s.Target), fields.Join(",\n"), conditions)
 }
