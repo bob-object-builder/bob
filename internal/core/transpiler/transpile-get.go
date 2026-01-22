@@ -112,7 +112,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 	if g.HasGroup {
 		groupString = TranspileGroup(&g.Group)
 
-		havingsError, havingString := TranspileCondition(&g.Conditions, true)
+		havingsError, havingString := TranspileCondition(&g.Havings, true)
 		if havingsError != nil {
 			return havingsError, ""
 		}
