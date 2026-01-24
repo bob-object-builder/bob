@@ -9,7 +9,7 @@ import (
 func TranspileDelete(v *remove.Delete) (*failure.Failure, string) {
 	sql := fmt.Sprintf("DELETE FROM %s", v.Target)
 
-	conditionsError, conditions := TranspileCondition(&v.Conditions, false)
+	conditionsError, conditions := TranspileCondition(&v.Conditions, false, nil)
 	if conditionsError != nil {
 		return conditionsError, ""
 	}

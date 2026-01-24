@@ -16,7 +16,7 @@ func TranspileSet(s *set.Set) (*failure.Failure, string) {
 		fields.Push(formatter.Indent(fmt.Sprintf("%s = %s", v.Key, v.Value)))
 	}
 
-	conditionsError, conditions := TranspileCondition(&s.Conditions, false)
+	conditionsError, conditions := TranspileCondition(&s.Conditions, false, nil)
 	if conditionsError != nil {
 		return conditionsError, ""
 	}

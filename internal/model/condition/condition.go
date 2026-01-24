@@ -30,7 +30,11 @@ func (c *Condition) Parse(token value.Token) *failure.Failure {
 	v := token.Value
 
 	if c.Target == "" {
-		c.Target = formatter.ToReferenceCase(v)
+		if token.Type == value.Key {
+			c.Target = formatter.ToReferenceCase(v)
+		} else {
+			c.Target = v
+		}
 		return nil
 	}
 

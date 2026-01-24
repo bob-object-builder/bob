@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func TranspileCondition(cs *condition.Conditions, isGrouped bool) (*failure.Failure, string) {
+func TranspileCondition(cs *condition.Conditions, isGrouped bool, aliases *value.Map[string]) (*failure.Failure, string) {
 	if len(cs.Conditions) == 0 {
 		return nil, ""
 	}
@@ -34,12 +34,20 @@ func TranspileCondition(cs *condition.Conditions, isGrouped bool) (*failure.Fail
 			return failure.ConditionValidation(c.From, c.Target), ""
 		}
 
-		var operation string
-		if strings.Contains(c.Target, ".") {
-			operation = fmt.Sprintf("%s %s", c.Target, c.Comparator)
-		} else {
-			operation = fmt.Sprintf("%s.%s %s", c.From, c.Target, c.Comparator)
+		var leftSide string
+		hasDot := strings.Contains(c.Target, ".")
+		useAlias := aliases != nil && aliases.Get(c.Target) == nil
+
+		switch {
+		case hasDot:
+			leftSide = c.Target
+		case useAlias:
+			leftSide = fmt.Sprintf("%s.%s", c.From, c.Target)
+		default:
+			leftSide = c.Target
 		}
+
+		operation := fmt.Sprintf("%s %s", leftSide, c.Comparator)
 
 		and := c.And.Join(fmt.Sprintf("\nAND %s ", operation))
 		and = fmt.Sprintf("%s %s", operation, and)

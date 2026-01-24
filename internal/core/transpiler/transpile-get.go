@@ -24,6 +24,7 @@ func TranspileSelection(s *get.Selection, alias string) string {
 func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 	selected := value.NewArray[string]()
 	orders := value.NewArray[string]()
+	aliases := value.NewMap[string]()
 
 	joinsError, joinsQueries, joinsSelections, joinsConditions := TranspileJoin(&g.Joins, g.Target)
 	if joinsError != nil {
@@ -57,6 +58,11 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 		switch v := col.Value.(type) {
 		case *get.Selection:
 			q := TranspileSelection(v, col.Alias)
+
+			if col.Alias != "" {
+				aliases.Set(col.Alias, col.Alias)
+			}
+
 			selected.Push(formatter.Indent(q))
 
 		case *get.Get:
@@ -103,7 +109,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 		}
 	}
 
-	conditionsError, conditionString := TranspileCondition(&g.Conditions, false)
+	conditionsError, conditionString := TranspileCondition(&g.Conditions, false, aliases)
 	if conditionsError != nil {
 		return conditionsError, ""
 	}
@@ -112,7 +118,7 @@ func TranspileGet(g *get.Get, isSubquery bool) (*failure.Failure, string) {
 	if g.HasGroup {
 		groupString = TranspileGroup(&g.Group)
 
-		havingsError, havingString := TranspileCondition(&g.Havings, true)
+		havingsError, havingString := TranspileCondition(&g.Havings, true, aliases)
 		if havingsError != nil {
 			return havingsError, ""
 		}
