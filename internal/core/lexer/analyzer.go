@@ -31,10 +31,13 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 
 	switch word {
 	case kw.OpenContext:
+		l.isOpenContext = true
 		l.isParameter = false
 		return nil
 
 	case kw.CloseContext, kw.VoidContext:
+		l.isOpenContext = false
+
 		if error := l.stack.Merge(); error != nil {
 			return error
 		}
@@ -84,6 +87,14 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 		return nil
 
 	case kw.Table:
+		if !l.stack.IsEmpty() {
+			latest := *l.stack.GetLast()
+
+			if t, ok := latest.(*table.Table); ok {
+				return failure.UnclosedContextAtTable(t.Name)
+			}
+		}
+
 		l.stack.Push(table.NewTable())
 		l.isParameter = true
 		return nil
@@ -220,7 +231,7 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 		}
 
 		if token.Type == value.Alias || token.Type == value.Key {
-			l.stack.Push(get.NewGetChild(v.Target, token.Value))
+			l.stack.Push(get.NewGetChild(v.Target, word))
 			return nil
 		} else {
 			return failure.CannotUseExpressionOrStringAsSelection

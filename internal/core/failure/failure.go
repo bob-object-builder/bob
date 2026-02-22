@@ -47,6 +47,7 @@ const (
 	IdJsonParse                            = "JsonParse"
 	IdUndefinedOrderTarget                 = "UndefinedOrderTarget"
 	IdLimitMustBeNumeric                   = "LimitMustBeNumeric"
+	IdUnclosedContextAtTable               = "MalformedTable"
 )
 
 /*
@@ -240,5 +241,12 @@ func UndefinedValueOnSetter(setter string, key string) *Failure {
 	return &Failure{
 		Name:    IdUndefinedValueOnSetter,
 		Message: fmt.Sprintf("undefined value on setter '%s' on key '%s'", setter, key),
+	}
+}
+
+func UnclosedContextAtTable(table string) *Failure {
+	return &Failure{
+		Name:    IdUnclosedContextAtTable,
+		Message: fmt.Sprintf("unclosed context at table '%s' definition", table),
 	}
 }

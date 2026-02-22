@@ -12,10 +12,11 @@ import (
 )
 
 type Lexer struct {
-	Driver      driver.Driver
-	isParameter bool
-	stack       stack.Stack[any]
-	inComment   bool
+	Driver        driver.Driver
+	isParameter   bool
+	isOpenContext bool
+	stack         stack.Stack[any]
+	inComment     bool
 }
 
 var latestKey string

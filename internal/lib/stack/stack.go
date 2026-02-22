@@ -92,3 +92,7 @@ func (s *Stack[T]) GetActions() value.Array[T] {
 func (s *Stack[T]) GetOutput() value.Array[T] {
 	return s.output
 }
+
+func (s *Stack[T]) IsEmpty() bool {
+	return s.items.Length() == 0
+}
