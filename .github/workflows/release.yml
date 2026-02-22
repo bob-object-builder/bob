@@ -11,6 +11,7 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         include:
@@ -33,14 +34,18 @@ jobs:
         with:
           go-version: "1.24"
 
+      - name: Run tests
+        run: go test -v ./...
+
       # Build CLI for all OS/ARCH
       - name: Build CLI
         run: |
           echo "Building CLI for ${{ matrix.goos }}-${{ matrix.goarch }}"
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bob-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} ./cmd/cli/main.go
 
-      # Build WASM only once
+      # Build WASM only once (only in linux job to avoid duplicates)
       - name: Build WASM
+        if: matrix.goos == 'linux'
         run: |
           if [ -f "./cmd/wasm/main.go" ]; then
             echo "Building WASM"
