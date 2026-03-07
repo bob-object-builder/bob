@@ -6,16 +6,20 @@ var TestCreateTable = test_types.ToTestCreateTable{
 	Driver: "sqlite",
 	ExpectedProfilesTable: `
 	CREATE TABLE profiles (
-			id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-			avatar TEXT NOT NULL
+	  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	  avatar TEXT NOT NULL
 	);`,
 	ExpectedUsersTable: `CREATE TABLE users (
 	  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	  name TEXT NOT NULL,
 	  email TEXT NOT NULL,
 	  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	  age INTEGER NOT NULL,
 	  profiles_id INTEGER,
-	  FOREIGN KEY (profiles_id) REFERENCES profiles(id)
+	  FOREIGN KEY (profiles_id) REFERENCES profiles(id),
+	
+	  CHECK(LENGTH(name) <= 16),
+	  CHECK(age > 18)
 	);
 
 	CREATE INDEX idx_users_email ON users(email);`,

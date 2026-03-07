@@ -6,6 +6,7 @@ import (
 	"salvadorsru/bob/internal/core/failure"
 	"salvadorsru/bob/internal/lib/formatter"
 	"salvadorsru/bob/internal/lib/value"
+	"salvadorsru/bob/internal/model/condition"
 	"salvadorsru/bob/internal/model/table"
 )
 
@@ -117,11 +118,56 @@ func (t *Transpiler) TranspileTable(tb *table.Table) (*failure.Failure, string) 
 			)
 		}
 
+		if t.Driver.Motor == driver.SQLite {
+			var limit int
+			switch driver.Type(c.Type) {
+			case driver.String8:
+				limit = 8
+			case driver.String16:
+				limit = 16
+			case driver.String32:
+				limit = 32
+			case driver.String64:
+				limit = 64
+			case driver.Int8:
+				tb.Checks.Prepend(condition.Condition{
+					And: *value.NewArray(fmt.Sprintf("%s >= -128 AND %s <= 127", c.Name, c.Name)),
+				})
+			case driver.Int16:
+				tb.Checks.Prepend(condition.Condition{
+					And: *value.NewArray(fmt.Sprintf("%s >= -32768 AND %s <= 32767", c.Name, c.Name)),
+				})
+			case driver.Int32:
+				tb.Checks.Prepend(condition.Condition{
+					And: *value.NewArray(fmt.Sprintf("%s >= -2147483648 AND %s <= 2147483647", c.Name, c.Name)),
+				})
+			case driver.Int64:
+				tb.Checks.Prepend(condition.Condition{
+					And: *value.NewArray(fmt.Sprintf("%s >= -9223372036854775808 AND %s <= 9223372036854775807", c.Name, c.Name)),
+				})
+			}
+
+			if limit > 0 {
+				tb.Checks.Prepend(condition.Condition{
+					And: *value.NewArray(fmt.Sprintf("LENGTH(%s) <= %d", c.Name, limit)),
+				})
+			}
+		}
+
 		col = formatter.Indent(col)
 		columns.Push(col)
 	}
 
+	checksError, checksString := TranspileChecks(&tb.Checks, false, nil)
+	if checksError != nil {
+		return checksError, ""
+	}
+
 	columns.Push(*references...)
+
+	if checksString != "" {
+		columns.Push(checksString)
+	}
 
 	if primaries.Length() > 0 {
 		primaryKey := fmt.Sprintf("PRIMARY KEY (%s)", primaries.Join(", "))

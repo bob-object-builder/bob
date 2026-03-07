@@ -73,6 +73,8 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 			l.stack.Push(condition.NewCondition(v.ReferencedTable, word))
 		case *set.Set:
 			l.stack.Push(condition.NewCondition(v.Target, word))
+		case *table.Table:
+			l.stack.Push(condition.NewCondition("", word))
 		}
 
 		return nil
@@ -153,11 +155,11 @@ func (l *Lexer) onValue(token value.Token) *failure.Failure {
 			if checker.IsUppercase(word) {
 				l.stack.Push(table.NewReference(word))
 				return nil
-			} else {
-				column := table.NewColumn(word)
-				l.stack.Push(column)
-				return nil
 			}
+
+			column := table.NewColumn(word)
+			l.stack.Push(column)
+			return nil
 		}
 
 	case *table.Column:
