@@ -11,3 +11,7 @@ type Conditions struct {
 func (cs *Conditions) Push(condition Condition) {
 	cs.Conditions.Push(condition)
 }
+
+func (cs *Conditions) Prepend(condition Condition) {
+	cs.Conditions.Prepend(condition)
+}

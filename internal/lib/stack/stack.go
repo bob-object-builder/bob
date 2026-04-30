@@ -63,7 +63,6 @@ func (s *Stack[T]) Merge() *failure.Failure {
 			s.actions.Push(*popped)
 		}
 
-		// s.output.Push(*popped)
 		return nil
 	}
 

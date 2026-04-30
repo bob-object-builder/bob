@@ -11,11 +11,14 @@ var TestCreateTable = test_types.ToTestCreateTable{
 );`,
 	ExpectedUsersTable: `CREATE TABLE users (
     id INT AUTO_INCREMENT NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(16) NOT NULL,
     email VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    age INT NOT NULL,
     profiles_id INT,
     FOREIGN KEY (profiles_id) REFERENCES profiles(id),
+
+    CHECK(age > 18),
     PRIMARY KEY (id)
 );
 

@@ -6,12 +6,11 @@ import (
 	mariadb_test "salvadorsru/bob/internal/test/mariadb"
 	postgres_test "salvadorsru/bob/internal/test/postgres"
 	sqlite_test "salvadorsru/bob/internal/test/sqlite"
-	test_types "salvadorsru/bob/internal/test/types"
 	"testing"
 )
 
 func TestCreateTable(t *testing.T) {
-	tests := value.NewArray[test_types.ToTestCreateTable](
+	tests := value.NewArray(
 		sqlite_test.TestCreateTable,
 		postgres_test.TestCreateTable,
 		mariadb_test.TestCreateTable,
@@ -26,10 +25,13 @@ func TestCreateTable(t *testing.T) {
 
 			table Users {
 				id id
-				name string
+				name string16
 				email string unique index
 				created_at current
 				Profiles id optional
+				age int int16
+
+				if age > 18
 			}
 
 			table Posts {
